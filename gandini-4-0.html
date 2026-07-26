@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <style>
   :root{
     --bg: #0C0F14;
@@ -201,6 +203,9 @@
       <div class="lang-btn" data-lang="en" onclick="setLang('en')">EN</div>
       <div class="lang-btn" data-lang="ja" onclick="setLang('ja')">日本語</div>
     </div>
+    <div class="lang-row">
+      <div class="lang-btn" id="gcal-btn" onclick="connectGoogleCalendar()" style="min-width:150px;">📅 Google Calendar</div>
+    </div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
         <path d="M 15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#262E3A" stroke-width="10" stroke-linecap="round"/>
@@ -224,6 +229,7 @@
 
   <main>
     <div class="view active" id="view-hoje">
+      <div id="gcal-hoje"></div>
       <div id="hoje-content" class="loading">…</div>
       <div class="undo-row"><button class="undo-btn" id="undo-btn-txt" onclick="undoAllToday()">—</button></div>
     </div>
@@ -288,6 +294,77 @@
 
 <script>
 const PASSWORD = "gandini2026";
+const GCAL_CLIENT_ID = "597690610927-qo47jp937va97bjbislrsi16vf67d8au.apps.googleusercontent.com";
+let gcalTokenClient = null;
+let gcalAccessToken = null;
+let gcalReady = false;
+
+function initGCal(){
+  try{
+    gapi.load('client', async () => {
+      await gapi.client.init({});
+      await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest');
+      gcalReady = true;
+    });
+    gcalTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      callback: (resp) => {
+        if(resp.access_token){
+          gcalAccessToken = resp.access_token;
+          gapi.client.setToken({ access_token: gcalAccessToken });
+          document.getElementById('gcal-btn').textContent = '📅 Conectado ✓';
+          document.getElementById('gcal-btn').classList.add('active');
+          refreshGCalViews();
+        }
+      },
+    });
+  }catch(e){ console.error('GCal init error', e); }
+}
+window.addEventListener('load', () => { setTimeout(initGCal, 800); });
+
+function connectGoogleCalendar(){
+  if(!gcalTokenClient){ alert('Google ainda carregando, tenta de novo em alguns segundos.'); return; }
+  gcalTokenClient.requestAccessToken();
+}
+
+async function fetchGCalEvents(dateObj){
+  if(!gcalAccessToken || !gcalReady) return null;
+  const start = new Date(dateObj); start.setHours(0,0,0,0);
+  const end = new Date(dateObj); end.setHours(23,59,59,999);
+  try{
+    const resp = await gapi.client.calendar.events.list({
+      calendarId: 'primary',
+      timeMin: start.toISOString(),
+      timeMax: end.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+    return resp.result.items || [];
+  }catch(e){
+    console.error('GCal fetch error', e);
+    return null;
+  }
+}
+
+function renderGCalBox(events){
+  if(events === null) return '';
+  if(events.length === 0) return `<div class="info-card" style="margin-bottom:12px;">📅 Sem eventos no Google Calendar hoje.</div>`;
+  const rows = events.map(ev => {
+    const time = ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : 'dia todo';
+    return `<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border);font-size:13px;"><span class="mono" style="color:var(--amber);min-width:52px;">${time}</span><span>${ev.summary || '(sem título)'}</span></div>`;
+  }).join('');
+  return `<div class="info-card" style="margin-bottom:12px;padding-top:8px;"><b>📅 Google Calendar</b>${rows}</div>`;
+}
+
+async function refreshGCalViews(){
+  if(document.getElementById('view-hoje').classList.contains('active')){
+    const events = await fetchGCalEvents(today);
+    const el = document.getElementById('gcal-hoje');
+    if(el) el.innerHTML = renderGCalBox(events);
+  }
+}
+
 function tryUnlock(){
   const val = document.getElementById('pw').value;
   if(val === PASSWORD){
@@ -815,6 +892,7 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(tb => tb.classList.toggle('active', tb.dataset.tab === name));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
+  if(name === 'hoje') refreshGCalViews();
   if(name === 'semana') renderSemana();
   if(name === 'calendario') { renderCalendarGrid(); renderDayDetail(today); }
   if(name === 'medidas') { document.getElementById('m-data').value = todayKey; renderHistorico(); renderPerguntas(); }
@@ -886,6 +964,13 @@ async function renderDayDetail(dateObj){
   header.style.cssText = 'font-family:Fraunces,serif;font-size:16px;margin:14px 4px 10px;color:var(--amber);';
   header.textContent = `${DIAS[currentLang][dateObj.getDay()]}, ${dateObj.getDate()} ${MESES[currentLang][dateObj.getMonth()]} ${dateObj.getFullYear()}`;
   container.appendChild(header);
+
+  if(gcalAccessToken){
+    const events = await fetchGCalEvents(dateObj);
+    const gbox = document.createElement('div');
+    gbox.innerHTML = renderGCalBox(events);
+    container.appendChild(gbox);
+  }
 
   sections.forEach(sec => {
     const box = document.createElement('div');
