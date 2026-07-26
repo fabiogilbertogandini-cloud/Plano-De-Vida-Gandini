@@ -179,6 +179,14 @@
   .cal-day.cal-today{ box-shadow: 0 0 0 2px var(--amber); font-weight:700; color:var(--ink); }
   #cal-detail{ margin-top:6px; }
 
+  .comment-btn{ background:none; border:1px solid var(--border); color:var(--ink-faint); width:22px; height:22px; border-radius:50%;
+    font-size:14px; line-height:1; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+  .comment-btn.has{ color:var(--amber); border-color:var(--amber-dim); }
+  .task-comment-box{ display:none; margin:6px 0 0 36px; }
+  .task-comment-box.open{ display:block; }
+  .task-comment-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
+    border-radius:8px; padding:8px; font-size:12.5px; font-family:'Inter',sans-serif; resize:vertical; box-sizing:border-box; }
+
   .loading{ text-align:center; padding:40px; color:var(--ink-faint); font-size:13px; }
 </style>
 </head>
@@ -245,6 +253,7 @@
         <div class="cal-nav-btn" id="cal-next-btn" onclick="navMonth(1)">›</div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
+      <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorioMensal()" style="margin-bottom:14px;">—</button>
       <div id="cal-detail"></div>
     </div>
 
@@ -266,6 +275,7 @@
           <button class="btn-primary" id="btn-salvar" onclick="salvarMedida()">—</button>
           <button class="btn-secondary" id="btn-pdf" onclick="gerarPDF()">—</button>
           <button class="btn-secondary" id="btn-clear" onclick="limparCamposMedida()">—</button>
+          <button class="btn-secondary" id="btn-backup" onclick="exportBackup()">—</button>
           <div class="save-msg" id="m-msg"></div>
         </div>
       </div>
@@ -417,6 +427,7 @@ const T = {
     dayType: { treino:'Dia de treino', descanso:'Dia de descanso', sabado:'Sábado — Jacob', domingo:'Domingo — Igreja' },
     arcLabel: 'do dia',
     verse: '"Consagre ao Senhor tudo o que você faz..." — Provérbios 16:3',
+    verse2: '"Busquem em primeiro lugar o Reino de Deus e a sua justiça..." — Mateus 6:33',
     tabHoje:'Hoje', tabSemana:'Semana', tabCalendario:'Calendário', tabMedidas:'Medidas',
     undoAll:'desfazer tudo de hoje', undoConfirm:'Desfazer tudo marcado hoje?',
     sec:{ wake:'Acordar', espiritual:'Espiritual', treino:'Treino', pesagem:'Pesagem semanal', jacob:'Tempo com o Jacob',
@@ -447,7 +458,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
-    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
+    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Exportar relatório do mês (PDF)', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
     confirmDeleteMedida:'Apagar essa medição?',
     perguntasTitle:'Perguntas — assim que ela responder', qPlaceholder:'Nova pergunta...', noQuestions:'Nenhuma pergunta ainda.',
@@ -460,6 +471,7 @@ const T = {
     dayType: { treino:'Training day', descanso:'Rest day', sabado:'Saturday — Jacob', domingo:'Sunday — Church' },
     arcLabel: 'of day',
     verse: '"Commit to the Lord whatever you do..." — Proverbs 16:3',
+    verse2: '"Seek first the kingdom of God and his righteousness..." — Matthew 6:33',
     tabHoje:'Today', tabSemana:'Week', tabCalendario:'Calendar', tabMedidas:'Measurements',
     undoAll:'undo everything today', undoConfirm:'Undo everything marked today?',
     sec:{ wake:'Wake up', espiritual:'Spiritual', treino:'Workout', pesagem:'Weekly weigh-in', jacob:'Time with Jacob',
@@ -490,7 +502,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
-    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
+    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Export monthly report (PDF)', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
     confirmDeleteMedida:'Delete this measurement?',
     perguntasTitle:'Questions — as soon as she replies', qPlaceholder:'New question...', noQuestions:'No questions yet.',
@@ -503,6 +515,7 @@ const T = {
     dayType: { treino:'トレーニングの日', descanso:'休養日', sabado:'土曜日 — ジェイコブ', domingo:'日曜日 — 教会' },
     arcLabel: '本日の進捗',
     verse: '「あなたがすることを主にゆだねよ...」 — 箴言 16:3',
+    verse2: '「まず神の国と神の義を求めなさい...」 — マタイによる福音書 6:33',
     tabHoje:'今日', tabSemana:'週間', tabCalendario:'カレンダー', tabMedidas:'測定',
     undoAll:'今日のチェックを全て取り消す', undoConfirm:'今日のチェックを全て取り消しますか？',
     sec:{ wake:'起床', espiritual:'霊的な時間', treino:'トレーニング', pesagem:'週間体重測定', jacob:'ジェイコブとの時間',
@@ -533,7 +546,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
-    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
+    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'月次レポートを書き出す（PDF）', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
     confirmDeleteMedida:'この測定記録を削除しますか？',
     perguntasTitle:'質問 — 返信があり次第', qPlaceholder:'新しい質問...', noQuestions:'質問はまだありません。',
@@ -748,6 +761,7 @@ const WEEKLY_PRAYER = {
     }
   },
 };
+const DEVOTIONAL_PAGES = {"1-1":8,"1-2":9,"1-3":10,"1-4":11,"1-5":12,"1-6":13,"1-7":14,"1-8":15,"1-9":16,"1-10":17,"1-11":18,"1-12":19,"1-13":20,"1-14":21,"1-15":22,"1-16":23,"1-17":24,"1-18":25,"1-19":26,"1-20":27,"1-21":28,"1-22":29,"1-23":30,"1-24":31,"1-25":32,"1-26":33,"1-27":34,"1-28":35,"1-29":36,"1-30":37,"1-31":38,"2-1":40,"2-2":41,"2-3":42,"2-4":43,"2-5":44,"2-6":45,"2-7":46,"2-8":47,"2-9":48,"2-10":49,"2-11":50,"2-12":51,"2-13":52,"2-14":53,"2-15":54,"2-16":55,"2-17":56,"2-18":57,"2-19":58,"2-20":59,"2-21":60,"2-22":61,"2-23":62,"2-24":63,"2-25":64,"2-26":65,"2-27":66,"2-28":67,"3-1":69,"3-2":70,"3-3":71,"3-4":72,"3-5":73,"3-6":74,"3-7":75,"3-8":76,"3-9":77,"3-10":78,"3-11":79,"3-12":80,"3-13":81,"3-14":82,"3-15":83,"3-16":84,"3-17":85,"3-18":86,"3-19":87,"3-20":88,"3-21":89,"3-22":90,"3-23":91,"3-24":92,"3-25":93,"3-26":94,"3-27":95,"3-28":96,"3-29":97,"3-30":98,"3-31":99,"4-1":101,"4-2":102,"4-3":103,"4-4":104,"4-5":105,"4-6":106,"4-7":107,"4-8":108,"4-9":109,"4-10":110,"4-11":111,"4-12":112,"4-13":113,"4-14":114,"4-15":115,"4-16":116,"4-17":117,"4-18":118,"4-19":119,"4-20":120,"4-21":121,"4-22":122,"4-23":123,"4-24":124,"4-25":125,"4-26":126,"4-27":127,"4-28":128,"4-29":129,"4-30":130,"5-1":132,"5-2":133,"5-3":134,"5-4":135,"5-5":136,"5-6":137,"5-7":138,"5-8":139,"5-9":140,"5-10":141,"5-11":142,"5-12":143,"5-13":144,"5-14":145,"5-15":146,"5-16":147,"5-17":148,"5-18":149,"5-19":150,"5-20":151,"5-21":152,"5-22":153,"5-23":154,"5-24":155,"5-25":156,"5-26":157,"5-27":158,"5-28":159,"5-29":160,"5-30":161,"5-31":162,"6-1":164,"6-2":165,"6-3":166,"6-4":167,"6-5":168,"6-6":169,"6-7":170,"6-8":171,"6-9":172,"6-10":173,"6-11":174,"6-12":175,"6-13":176,"6-14":177,"6-15":178,"6-16":179,"6-17":180,"6-18":181,"6-19":182,"6-20":183,"6-21":184,"6-22":185,"6-23":186,"6-24":187,"6-25":188,"6-26":189,"6-27":190,"6-28":191,"6-29":192,"6-30":193,"7-1":195,"7-2":196,"7-3":197,"7-4":198,"7-5":199,"7-6":200,"7-7":201,"7-8":202,"7-9":203,"7-10":204,"7-11":205,"7-12":206,"7-13":207,"7-14":208,"7-15":209,"7-16":210,"7-17":211,"7-18":212,"7-19":213,"7-20":214,"7-21":215,"7-22":216,"7-23":217,"7-24":218,"7-25":219,"7-26":220,"7-27":221,"7-28":222,"7-29":223,"7-30":224,"7-31":225,"8-1":227,"8-2":228,"8-3":229,"8-4":230,"8-5":231,"8-6":232,"8-7":233,"8-8":234,"8-9":235,"8-10":236,"8-11":237,"8-12":238,"8-13":239,"8-14":240,"8-15":241,"8-16":242,"8-17":243,"8-18":244,"8-19":245,"8-20":246,"8-21":247,"8-22":248,"8-23":249,"8-24":250,"8-25":251,"8-26":252,"8-27":253,"8-28":254,"8-29":255,"8-30":256,"8-31":257,"9-1":259,"9-2":260,"9-3":261,"9-4":262,"9-5":263,"9-6":264,"9-7":265,"9-8":266,"9-9":267,"9-10":268,"9-11":269,"9-12":270,"9-13":271,"9-14":272,"9-15":273,"9-16":274,"9-17":275,"9-18":276,"9-19":277,"9-20":278,"9-21":279,"9-22":280,"9-23":281,"9-24":282,"9-25":283,"9-26":284,"9-27":285,"9-28":286,"9-29":287,"9-30":288,"10-1":290,"10-2":291,"10-3":292,"10-4":293,"10-5":294,"10-6":295,"10-7":296,"10-8":297,"10-9":298,"10-10":299,"10-11":300,"10-12":301,"10-13":302,"10-14":303,"10-15":304,"10-16":305,"10-17":306,"10-18":307,"10-19":308,"10-20":309,"10-21":310,"10-22":311,"10-23":312,"10-24":313,"10-25":314,"10-26":315,"10-27":316,"10-28":317,"10-29":318,"10-30":319,"10-31":320,"11-1":322,"11-2":323,"11-3":324,"11-4":325,"11-5":326,"11-6":327,"11-7":328,"11-8":329,"11-9":330,"11-10":331,"11-11":332,"11-12":333,"11-13":334,"11-14":335,"11-15":336,"11-16":337,"11-17":338,"11-18":339,"11-19":340,"11-20":341,"11-21":342,"11-22":343,"11-23":344,"11-24":345,"11-25":346,"11-26":347,"11-27":348,"11-28":349,"11-29":350,"11-30":351,"12-1":353,"12-2":354,"12-3":355,"12-4":356,"12-5":357,"12-6":358,"12-7":359,"12-8":360,"12-9":361,"12-10":362,"12-11":363,"12-12":364,"12-13":365,"12-14":366,"12-15":367,"12-16":368,"12-17":369,"12-18":370,"12-19":371,"12-20":372,"12-21":373,"12-22":374,"12-23":375,"12-24":376,"12-25":377,"12-26":378,"12-27":379,"12-28":380,"12-29":381,"12-30":382,"12-31":383};
 function dayOfYear(d){
   const start = new Date(d.getFullYear(), 0, 0);
   const diff = d - start;
@@ -826,9 +840,14 @@ function buildSections(date, lang){
   sections.push({ id:'refeicoes', time:'', title:t.sec.refeicoes, tasks:refeicaoTasks });
 
   const doy = dayOfYear(date);
-  const devoLabel = lang === 'pt' ? `Devocional do dia — dia ${doy} de "One Year Devotions for Men"`
+  const devoKey = `${date.getMonth()+1}-${date.getDate()}`;
+  const devoPage = DEVOTIONAL_PAGES[devoKey];
+  const devoText = lang === 'pt' ? `Devocional do dia — dia ${doy} de "One Year Devotions for Men"`
     : lang === 'en' ? `Daily devotional — day ${doy} of "One Year Devotions for Men"`
     : `今日のデボーション — 『One Year Devotions for Men』${doy}日目`;
+  const devoLabel = devoPage
+    ? `<a href="One_Year_Devotions_for_Men.pdf#page=${devoPage}" target="_blank" style="color:inherit;text-decoration:underline;text-decoration-color:var(--amber);">${devoText}</a>`
+    : devoText;
   sections.push({ id:'oracaoAlmoco', time:'12h', title:t.sec.oracaoAlmoco, tasks:[
     { id:'devocionalAlmoco', label: devoLabel },
   ]});
@@ -897,7 +916,7 @@ function renderAll(){
 function renderStaticText(){
   const t = T[currentLang];
   document.getElementById('arc-label-txt').textContent = t.arcLabel;
-  document.getElementById('verse-txt').textContent = t.verse;
+  document.getElementById('verse-txt').textContent = (dayOfYear(today) % 2 === 0) ? t.verse : t.verse2;
   document.getElementById('tab-hoje').textContent = t.tabHoje;
   document.getElementById('tab-semana').textContent = t.tabSemana;
   document.getElementById('tab-calendario').textContent = t.tabCalendario;
@@ -916,6 +935,8 @@ function renderStaticText(){
   document.getElementById('btn-salvar').textContent = t.btnSalvar;
   document.getElementById('btn-pdf').textContent = t.btnPdf;
   document.getElementById('btn-clear').textContent = t.btnClear;
+  document.getElementById('btn-backup').textContent = t.btnBackup;
+  document.getElementById('btn-relatorio').textContent = t.btnRelatorio;
   document.getElementById('lembrete-title').textContent = t.lembreteTitle;
   document.getElementById('btn-lembrete-save').textContent = t.btnLembreteSave;
   document.getElementById('perguntas-title').textContent = t.perguntasTitle;
@@ -984,7 +1005,7 @@ async function renderHoje(){
       });
 
       for(const r of pending){
-        const rec = await getDay(r.key);
+        const todayRec = await getDay(todayKey);
         const dLabel = `${DIAS[currentLang][r.dateObj.getDay()]} ${r.dateObj.getDate()}/${r.dateObj.getMonth()+1}`;
         const sub = document.createElement('div');
         sub.style.cssText = 'font-size:12px;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 4px;';
@@ -992,8 +1013,8 @@ async function renderHoje(){
         body.appendChild(sub);
 
         WORKOUTS[r.letra].forEach(ex => {
-          const exId = `tr_${ex.id}`;
-          const done = !!rec[exId];
+          const exId = `mk_${r.letra}_${ex.id}`;
+          const done = !!todayRec[exId];
           const row = document.createElement('div');
           row.className = 'task-row' + (done ? ' done' : '');
           const noteTxt = exNote(ex, currentLang);
@@ -1006,11 +1027,12 @@ async function renderHoje(){
           if(noteTxt) html += `<div class="task-note-inline">${noteTxt}</div>`;
           row.innerHTML = html;
           row.querySelector('.check').addEventListener('click', async () => {
-            const fresh = await getDay(r.key);
+            const fresh = await getDay(todayKey);
             fresh[exId] = !fresh[exId];
-            const allIds = WORKOUTS[r.letra].map(e => `tr_${e.id}`);
-            fresh.treino = allIds.every(id => !!fresh[id]);
-            await setDay(r.key, fresh);
+            const allIds = WORKOUTS[r.letra].map(e => `mk_${r.letra}_${e.id}`);
+            fresh[`makeup_${r.letra}`] = allIds.every(id => !!fresh[id]);
+            await setDay(todayKey, fresh);
+            dayData = fresh;
             renderHoje();
           });
           body.appendChild(row);
@@ -1025,12 +1047,24 @@ async function renderHoje(){
 async function getWeekTreinoStatus(date){
   const monday = startOfWeek(date);
   const defs = [ {offset:0, letra:'A'}, {offset:2, letra:'B'}, {offset:4, letra:'C'} ];
+
+  const weekDates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    if(d <= date) weekDates.push(d);
+  }
+  const weekRecords = await Promise.all(weekDates.map(d => getDay(fmtKey(d))));
+
   const result = [];
-  for(const d of defs){
-    const dt = new Date(monday); dt.setDate(monday.getDate()+d.offset);
+  for(const def of defs){
+    const dt = new Date(monday); dt.setDate(monday.getDate()+def.offset);
     const key = fmtKey(dt);
     const rec = await getDay(key);
-    result.push({key, letra:d.letra, done: !!rec.treino, dateObj: dt});
+    let done = !!rec.treino;
+    if(!done){
+      done = weekRecords.some(wr => !!wr[`makeup_${def.letra}`]);
+    }
+    result.push({key, letra:def.letra, done, dateObj: dt});
   }
   return result;
 }
@@ -1046,13 +1080,17 @@ function setChecked(taskId, val){
 function renderTaskRow(task, groupIds){
   const row = document.createElement('div');
   row.className = 'task-row' + (getChecked(task.id) ? ' done' : '');
+  const commentKey = `c_${task.id}`;
+  const hasComment = !!(dayData[commentKey] && dayData[commentKey].trim());
   let html = `
     <div class="task-row-main">
       <div class="check ${getChecked(task.id) ? 'done' : ''}" data-task="${task.id}">
         <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div class="task-label">${task.label}</div>
-    </div>`;
+      <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
+    </div>
+    <div class="task-comment-box"><textarea rows="2" placeholder="comentário...">${dayData[commentKey] || ''}</textarea></div>`;
   if(task.note){
     html += `<div class="task-note-inline">${task.note}</div>`;
   }
@@ -1071,6 +1109,17 @@ function renderTaskRow(task, groupIds){
       dayData.treino = groupIds.every(id => !!dayData[id]);
       setDay(todayKey, dayData);
     }
+  });
+  const commentBtn = row.querySelector('.comment-btn');
+  const commentBox = row.querySelector('.task-comment-box');
+  commentBtn.addEventListener('click', () => {
+    commentBox.classList.toggle('open');
+  });
+  const textarea = row.querySelector('textarea');
+  textarea.addEventListener('input', () => {
+    dayData[commentKey] = textarea.value;
+    setDay(todayKey, dayData);
+    commentBtn.classList.toggle('has', textarea.value.trim().length > 0);
   });
   return row;
 }
@@ -1254,12 +1303,16 @@ async function renderDayDetail(dateObj){
         const row = document.createElement('div');
         const done = !!data[tk.id];
         row.className = 'task-row' + (done ? ' done' : '');
+        const commentKey = `c_${tk.id}`;
+        const hasComment = !!(data[commentKey] && data[commentKey].trim());
         let html = `<div class="task-row-main">
           <div class="check ${done ? 'done' : ''}">
             <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="task-label">${tk.label}</div>
-        </div>`;
+          <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
+        </div>
+        <div class="task-comment-box"><textarea rows="2" placeholder="comentário...">${data[commentKey] || ''}</textarea></div>`;
         if(tk.note) html += `<div class="task-note-inline">${tk.note}</div>`;
         row.innerHTML = html;
         row.querySelector('.check').addEventListener('click', async () => {
@@ -1271,6 +1324,15 @@ async function renderDayDetail(dateObj){
           if(key === todayKey){ dayData = data; updateArc(); renderSemanaIfActive(); }
           renderDayDetail(dateObj);
           renderCalendarGrid();
+        });
+        const cBtn = row.querySelector('.comment-btn');
+        const cBox = row.querySelector('.task-comment-box');
+        cBtn.addEventListener('click', () => { cBox.classList.toggle('open'); });
+        row.querySelector('textarea').addEventListener('input', async (e) => {
+          data[commentKey] = e.target.value;
+          await setDay(key, data);
+          cBtn.classList.toggle('has', e.target.value.trim().length > 0);
+          if(key === todayKey){ dayData = data; }
         });
         body.appendChild(row);
       });
@@ -1397,6 +1459,69 @@ function salvarLembrete(){
     document.getElementById('lembrete-msg').style.color = 'var(--coral)';
     document.getElementById('lembrete-msg').textContent = t.errMsg;
   }
+}
+
+function exportBackup(){
+  try{
+    const data = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('gandini-')) data[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `gandini-backup-${todayKey}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){ console.error('backup export error', e); alert('Erro ao exportar backup.'); }
+}
+
+async function gerarRelatorioMensal(){
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageH = doc.internal.pageSize.height;
+    let y = 20;
+    function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text(`Gandini 4.0 — Relatório de ${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`, 20, y);
+    y += 10;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+
+    const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
+    for(let d=1; d<=daysInMonth; d++){
+      const dt = new Date(calMonth.getFullYear(), calMonth.getMonth(), d);
+      const rec = await getDay(fmtKey(dt));
+      const type = getDayType(dt);
+      const oracao = rec.oracao ? 'Sim' : 'Não';
+      const treino = type === 'treino' ? (rec.treino ? 'Sim' : 'Não') : '-';
+      const agua = (rec.agua_ml||0) >= 3500 ? 'Sim' : `${rec.agua_ml||0}ml`;
+      const supl = (rec.fluoxetine && rec.anfetamina && rec.vitD && rec.creatina) ? 'Sim' : 'Parcial';
+      ensureSpace(6);
+      doc.text(`${String(d).padStart(2,'0')}/${calMonth.getMonth()+1} (${DIAS.pt[dt.getDay()].slice(0,3)}) — Oração:${oracao}  Treino:${treino}  Água:${agua}  Suplementos:${supl}`, 20, y);
+      y += 5.5;
+    }
+
+    y += 4; ensureSpace(10);
+    doc.setFont('helvetica','bold'); doc.text('Medidas registradas no mês:', 20, y); y += 7;
+    doc.setFont('helvetica','normal');
+    const allMedidas = await getAllHistorico();
+    const monthPrefix = `${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,'0')}`;
+    const monthMedidas = allMedidas.filter(e => e.data && e.data.startsWith(monthPrefix));
+    if(monthMedidas.length === 0){
+      ensureSpace(6); doc.text('Nenhuma medição registrada.', 20, y); y += 6;
+    } else {
+      monthMedidas.forEach(e => {
+        ensureSpace(6);
+        doc.text(`${e.data} — peso: ${e.peso||'—'}kg, cintura: ${e.cintura||'—'}cm, abdômen: ${e.abdomen||'—'}cm`, 20, y);
+        y += 5.5;
+      });
+    }
+
+    doc.save(`gandini-relatorio-${monthPrefix}.pdf`);
+  }catch(e){ console.error('relatorio error', e); alert('Erro ao gerar relatório.'); }
 }
 
 function limparCamposMedida(){
