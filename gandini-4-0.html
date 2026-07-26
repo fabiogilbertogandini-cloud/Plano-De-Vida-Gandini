@@ -554,6 +554,45 @@ const todayType = getDayType(today);
 /* ---------------- TASK DEFINITIONS ---------------- */
 const TREINO_LETRA = { 1:'A', 3:'B', 5:'C' };
 
+const WORKOUTS = {
+  A: [
+    { id:'warmup', pt:'Aquecimento — Esteira, inclinação 5%, 2.5–3.0 MPH (10min)', en:'Warm-up — Treadmill, 5% incline, 2.5–3.0 MPH (10min)', ja:'ウォームアップ — トレッドミル、傾斜5%、2.5–3.0 MPH（10分）' },
+    { id:'ex1', pt:'Agachamento com halter (goblet) — 4x10', en:'Goblet Squat — 4x10', ja:'ゴブレットスクワット — 4x10' },
+    { id:'ex2', pt:'Supino reto com halteres — 4x10', en:'Dumbbell Bench Press — 4x10', ja:'ダンベルベンチプレス — 4x10' },
+    { id:'ex3', pt:'Remada sentada (pulley) — 3x12', en:'Seated Cable Row — 3x12', ja:'シーテッドケーブルロー — 3x12' },
+    { id:'ex4', pt:'Desenvolvimento de ombro com halteres — 3x10', en:'Dumbbell Shoulder Press — 3x10', ja:'ダンベルショルダープレス — 3x10' },
+    { id:'ex5', pt:'Afundo alternado — 3x10 (cada perna)', en:'Walking Lunges — 3x10 (each leg)', ja:'ウォーキングランジ — 各脚3x10' },
+    { id:'ex6', pt:'Prancha — 3x40s', en:'Plank — 3x40s', ja:'プランク — 3x40秒' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15' },
+    { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
+  ],
+  B: [
+    { id:'warmup', pt:'Aquecimento — Bike (10min)', en:'Warm-up — Bike (10min)', ja:'ウォームアップ — バイク（10分）' },
+    { id:'ex1', pt:'Levantamento terra romeno com halteres — 4x10', en:'Romanian Deadlift — 4x10', ja:'ルーマニアンデッドリフト — 4x10' },
+    { id:'ex2', pt:'Puxada alta (pulley) — 4x12', en:'Lat Pulldown — 4x12', ja:'ラットプルダウン — 4x12' },
+    { id:'ex3', pt:'Fly inclinado (pulley) — 3x12', en:'Incline Cable Fly — 3x12', ja:'インクラインケーブルフライ — 3x12' },
+    { id:'ex4', pt:'Elevação lateral com halteres — 3x12', en:'Lateral Raise — 3x12', ja:'サイドレイズ — 3x12' },
+    { id:'ex5', pt:'Tríceps pulley barra reta — 3x12', en:'Triceps Pushdown (straight bar) — 3x12', ja:'トライセプスプッシュダウン（ストレートバー）— 3x12',
+      notePt:'Evitar corda — cotovelo esquerdo.', noteEn:'Avoid the rope attachment — left elbow.', noteJa:'ロープアタッチメントは避ける — 左肘のため。' },
+    { id:'ex6', pt:'Elevação de joelhos suspenso — 3x12', en:'Hanging Knee Raise — 3x12', ja:'ハンギングニーレイズ — 3x12' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15' },
+    { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
+  ],
+  C: [
+    { id:'warmup', pt:'Aquecimento — Esteira em intervalo', en:'Warm-up — Treadmill intervals', ja:'ウォームアップ — トレッドミルインターバル' },
+    { id:'ex1', pt:'Agachamento búlgaro — 3x10 (cada perna)', en:'Bulgarian Split Squat — 3x10 (each leg)', ja:'ブルガリアンスクワット — 各脚3x10' },
+    { id:'ex2', pt:'Remada curvada com halteres — 4x10', en:'Bent-Over Dumbbell Row — 4x10', ja:'ベントオーバーロー — 4x10' },
+    { id:'ex3', pt:'Supino inclinado com halteres — 3x10', en:'Incline Dumbbell Press — 3x10', ja:'インクラインダンベルプレス — 3x10' },
+    { id:'ex4', pt:'Panturrilha em pé — 4x15', en:'Standing Calf Raise — 4x15', ja:'スタンディングカーフレイズ — 4x15' },
+    { id:'ex5', pt:'Rosca direta com halteres (leve) — 3x12', en:'Dumbbell Bicep Curl (light) — 3x12', ja:'ダンベルバイセップカール（軽め）— 3x12',
+      notePt:'Poupar cotovelo esquerdo.', noteEn:'Go easy on the left elbow.', noteJa:'左肘に負担をかけないように。' },
+    { id:'ex6', pt:'Prancha lateral — 3x30s (cada lado)', en:'Side Plank — 3x30s (each side)', ja:'サイドプランク — 各側3x30秒' },
+    { id:'cooldown', pt:'Esteira em intervalo (10min) — 2min moderado / 1min forte', en:'Treadmill intervals (10min) — 2min moderate / 1min hard', ja:'トレッドミルインターバル（10分）— 中強度2分／高強度1分' },
+  ],
+};
+function exLabel(ex, lang){ return lang === 'pt' ? ex.pt : lang === 'en' ? ex.en : ex.ja; }
+function exNote(ex, lang){ if(!ex.notePt) return null; return lang === 'pt' ? ex.notePt : lang === 'en' ? ex.noteEn : ex.noteJa; }
+
 function buildSections(date, lang){
   const t = T[lang];
   const type = getDayType(date);
@@ -567,9 +606,14 @@ function buildSections(date, lang){
       {id:'devocional', label:t.task.devocional10},
       {id:'meditacao', label:t.task.meditacao},
     ]});
-    sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${TREINO_LETRA[wd]}`, tasks:[
-      {id:'treino', label:t.task.treinoSessao(TREINO_LETRA[wd])},
-    ]});
+    const letra = TREINO_LETRA[wd];
+    const exList = WORKOUTS[letra].map(ex => ({
+      id: `tr_${ex.id}`,
+      label: exLabel(ex, lang),
+      note: exNote(ex, lang),
+    }));
+    sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra}`, tasks: exList,
+      groupIds: exList.map(e => e.id) });
   } else if(type === 'descanso'){
     sections.push({ id:'wake', time:'6h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar6}] });
     sections.push({ id:'espiritual', time:'6h05', title:t.sec.espiritual, tasks:[
@@ -734,7 +778,7 @@ async function renderHoje(){
     if(sec.isWater){
       body.appendChild(renderWater());
     } else {
-      sec.tasks.forEach(tk => body.appendChild(renderTaskRow(tk)));
+      sec.tasks.forEach(tk => body.appendChild(renderTaskRow(tk, sec.groupIds)));
     }
     if(sec.note){
       const n = document.createElement('div');
@@ -772,6 +816,7 @@ async function renderHoje(){
           </div>`;
         row.querySelector('.check').addEventListener('click', async (e) => {
           const rec = await getDay(r.key);
+          WORKOUTS[r.letra].forEach(ex => { rec[`tr_${ex.id}`] = true; });
           rec.treino = true;
           await setDay(r.key, rec);
           e.currentTarget.classList.add('done');
@@ -806,7 +851,7 @@ function setChecked(taskId, val){
   renderSemanaIfActive();
 }
 
-function renderTaskRow(task){
+function renderTaskRow(task, groupIds){
   const row = document.createElement('div');
   row.className = 'task-row' + (getChecked(task.id) ? ' done' : '');
   let html = `
@@ -826,6 +871,11 @@ function renderTaskRow(task){
     setChecked(task.id, newVal);
     checkEl.classList.toggle('done', newVal);
     row.classList.toggle('done', newVal);
+    if(groupIds){
+      dayData.treino = groupIds.every(id => !!dayData[id]);
+      setDay(todayKey, dayData);
+      renderSemanaIfActive();
+    }
   });
   return row;
 }
@@ -1019,6 +1069,9 @@ async function renderDayDetail(dateObj){
         row.innerHTML = html;
         row.querySelector('.check').addEventListener('click', async () => {
           data[tk.id] = !data[tk.id];
+          if(sec.groupIds){
+            data.treino = sec.groupIds.every(id => !!data[id]);
+          }
           await setDay(key, data);
           if(key === todayKey){ dayData = data; updateArc(); renderSemanaIfActive(); }
           renderDayDetail(dateObj);
