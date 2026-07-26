@@ -265,11 +265,19 @@
           </div>
           <button class="btn-primary" id="btn-salvar" onclick="salvarMedida()">—</button>
           <button class="btn-secondary" id="btn-pdf" onclick="gerarPDF()">—</button>
+          <button class="btn-secondary" id="btn-clear" onclick="limparCamposMedida()">—</button>
           <div class="save-msg" id="m-msg"></div>
         </div>
       </div>
 
-      <div class="info-card" id="lembrete-card">—</div>
+      <div class="section">
+        <div class="section-head"><div class="section-title" id="lembrete-title">—</div></div>
+        <div class="section-body">
+          <textarea id="lembrete-text" rows="4" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:10px;font-size:13px;font-family:'Inter',sans-serif;resize:vertical;"></textarea>
+          <button class="btn-secondary" id="btn-lembrete-save" onclick="salvarLembrete()">—</button>
+          <div class="save-msg" id="lembrete-msg"></div>
+        </div>
+      </div>
 
       <div class="section">
         <div class="section-head"><div class="section-title" id="perguntas-title">—</div></div>
@@ -425,8 +433,9 @@ const T = {
     week:{ label:'—' },
     medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
-    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
-    lembreteCard:'<b>Lembrete — próxima consulta agendada:</b> Magnésio, Zinco, Ômega 3, Vitamina B12, Apple Cider Vinegar (cápsulas), Coenzima Q10 — viabilidade e dosagem, considerando Fluoxetine e Anfetamina em uso.',
+    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
+    lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
+    confirmDeleteMedida:'Apagar essa medição?',
     perguntasTitle:'Perguntas — assim que ela responder', qPlaceholder:'Nova pergunta...', noQuestions:'Nenhuma pergunta ainda.',
     histTitle:'Histórico', noHistory:'Nenhuma medição ainda.',
     pdfHeader:'Fábio Gilberto Gandini — Medidas', pdfData:'Data', pdfLembrete:'Lembrete — próxima consulta agendada',
@@ -467,8 +476,9 @@ const T = {
     week:{ label:'—' },
     medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
-    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
-    lembreteCard:'<b>Reminder — next scheduled appointment:</b> Magnesium, Zinc, Omega 3, Vitamin B12, Apple Cider Vinegar (capsules), Coenzyme Q10 — feasibility and dosage, considering current use of Fluoxetine and Amphetamine.',
+    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
+    lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
+    confirmDeleteMedida:'Delete this measurement?',
     perguntasTitle:'Questions — as soon as she replies', qPlaceholder:'New question...', noQuestions:'No questions yet.',
     histTitle:'History', noHistory:'No measurements yet.',
     pdfHeader:'Fábio Gilberto Gandini — Measurements', pdfData:'Date', pdfLembrete:'Reminder — next scheduled appointment',
@@ -509,8 +519,9 @@ const T = {
     week:{ label:'—' },
     medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
-    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
-    lembreteCard:'<b>リマインダー — 次回予約時に確認：</b>マグネシウム、亜鉛、オメガ3、ビタミンB12、アップルサイダービネガー（カプセル）、コエンザイムQ10 — 現在服用中のフルオキセチンとアンフェタミンを考慮した実現可能性と用量。',
+    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
+    lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
+    confirmDeleteMedida:'この測定記録を削除しますか？',
     perguntasTitle:'質問 — 返信があり次第', qPlaceholder:'新しい質問...', noQuestions:'質問はまだありません。',
     histTitle:'履歴', noHistory:'測定記録はまだありません。',
     pdfHeader:'ファビオ・ジルベルト・ガンディーニ — 測定記録', pdfData:'日付', pdfLembrete:'リマインダー — 次回予約時に確認',
@@ -745,7 +756,9 @@ function renderStaticText(){
   document.getElementById('lbl-panturrilha').textContent = t.lblPanturrilha;
   document.getElementById('btn-salvar').textContent = t.btnSalvar;
   document.getElementById('btn-pdf').textContent = t.btnPdf;
-  document.getElementById('lembrete-card').innerHTML = t.lembreteCard;
+  document.getElementById('btn-clear').textContent = t.btnClear;
+  document.getElementById('lembrete-title').textContent = t.lembreteTitle;
+  document.getElementById('btn-lembrete-save').textContent = t.btnLembreteSave;
   document.getElementById('perguntas-title').textContent = t.perguntasTitle;
   document.getElementById('q-new').placeholder = t.qPlaceholder;
   document.getElementById('hist-title').textContent = t.histTitle;
@@ -962,7 +975,7 @@ function switchTab(name){
   if(name === 'hoje') refreshGCalViews();
   if(name === 'semana') renderSemana();
   if(name === 'calendario') { renderCalendarGrid(); renderDayDetail(today); }
-  if(name === 'medidas') { document.getElementById('m-data').value = todayKey; renderHistorico(); renderPerguntas(); }
+  if(name === 'medidas') { document.getElementById('m-data').value = todayKey; renderHistorico(); renderPerguntas(); loadLembreteField(); }
 }
 function renderSemanaIfActive(){ if(document.getElementById('view-semana').classList.contains('active')) renderSemana(); }
 
@@ -1198,6 +1211,43 @@ async function renderSemana(){
 }
 
 /* ---------------- MEDIDAS ---------------- */
+const LEMBRETE_DEFAULT = 'Magnésio, Zinco, Ômega 3, Vitamina B12, Apple Cider Vinegar (cápsulas), Coenzima Q10 — viabilidade e dosagem, considerando Fluoxetine e Anfetamina em uso.';
+
+function getLembreteText(){
+  try{
+    const v = localStorage.getItem('gandini-lembrete');
+    return v !== null ? v : LEMBRETE_DEFAULT;
+  }catch(e){ return LEMBRETE_DEFAULT; }
+}
+function loadLembreteField(){
+  document.getElementById('lembrete-text').value = getLembreteText();
+}
+function salvarLembrete(){
+  const t = T[currentLang];
+  try{
+    localStorage.setItem('gandini-lembrete', document.getElementById('lembrete-text').value);
+    document.getElementById('lembrete-msg').style.color = 'var(--sage)';
+    document.getElementById('lembrete-msg').textContent = t.lembreteSaved;
+  }catch(e){
+    document.getElementById('lembrete-msg').style.color = 'var(--coral)';
+    document.getElementById('lembrete-msg').textContent = t.errMsg;
+  }
+}
+
+function limparCamposMedida(){
+  ['m-peso','m-cintura','m-abdomen','m-quadril','m-pescoco','m-braco','m-coxa','m-panturrilha'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('m-msg').textContent = '';
+}
+
+async function deletarMedida(dataKey){
+  const t = T[currentLang];
+  if(!confirm(t.confirmDeleteMedida)) return;
+  try{ localStorage.removeItem(`gandini-medidas:${dataKey}`); }catch(e){}
+  renderHistorico();
+}
+
 async function salvarMedida(){
   const t = T[currentLang];
   const data = document.getElementById('m-data').value || todayKey;
@@ -1242,7 +1292,10 @@ async function renderHistorico(){
     el.innerHTML = entries.map(e => `
       <div class="history-item">
         <span class="history-date">${e.data}</span>
-        <span>${e.peso ? e.peso+'kg' : '—'} · ${T[currentLang].lblCintura.split(' ')[0]} ${e.cintura||'—'}cm</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          ${e.peso ? e.peso+'kg' : '—'} · ${T[currentLang].lblCintura.split(' ')[0]} ${e.cintura||'—'}cm
+          <button class="q-del" onclick="deletarMedida('${e.data}')">×</button>
+        </span>
       </div>
     `).join('');
   }catch(e){
@@ -1345,7 +1398,7 @@ function gerarPDF(){
     y += 4;
 
     heading(t.pdfLembrete);
-    const lembreteText = 'Magnésio, Zinco, Ômega 3, Vitamina B12, Apple Cider Vinegar (cápsulas), Coenzima Q10 — viabilidade e dosagem, considerando Fluoxetine e Anfetamina em uso.';
+    const lembreteText = getLembreteText();
     const lembreteLines = doc.splitTextToSize(lembreteText, 170);
     lembreteLines.forEach(l => line(l));
     y += 4;
