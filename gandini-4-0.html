@@ -407,7 +407,7 @@ const T = {
     undoAll:'desfazer tudo de hoje', undoConfirm:'Desfazer tudo marcado hoje?',
     sec:{ wake:'Acordar', espiritual:'Espiritual', treino:'Treino', pesagem:'Pesagem semanal', jacob:'Tempo com o Jacob',
           estudo:'Estudo — REVEGO OPC', refeicoes:'Refeições', agua:'Água — meta 3.500ml', suplementos:'Medicamentos & Suplementos',
-          tempoChi:'Tempo com a Chi', winddown:'Encerrando o dia', recuperacao:'Treino em aberto — recuperar da semana' },
+          tempoChi:'Tempo com a Chi', winddown:'Encerrando o dia', recuperacao:'Treino em aberto — recuperar da semana', oracaoAlmoco:'Oração do Almoço' },
     task:{
       acordar5:'Levantei às 5h', acordar6:'Levantei às 6h',
       oracaoTreino:'Oração (2min fala + 1min silêncio + 1min Bíblia + 1min livre)', oracaoSimples:'Oração ao acordar',
@@ -450,7 +450,7 @@ const T = {
     undoAll:'undo everything today', undoConfirm:'Undo everything marked today?',
     sec:{ wake:'Wake up', espiritual:'Spiritual', treino:'Workout', pesagem:'Weekly weigh-in', jacob:'Time with Jacob',
           estudo:'Study — REVEGO OPC', refeicoes:'Meals', agua:'Water — 3,500ml goal', suplementos:'Medication & Supplements',
-          tempoChi:'Time with Chi', winddown:'Winding down', recuperacao:'Open workout — catch up this week' },
+          tempoChi:'Time with Chi', winddown:'Winding down', recuperacao:'Open workout — catch up this week', oracaoAlmoco:'Lunch Prayer' },
     task:{
       acordar5:'Got up at 5am', acordar6:'Got up at 6am',
       oracaoTreino:'Prayer (2min speak + 1min silence + 1min Bible + 1min free)', oracaoSimples:'Prayer on waking',
@@ -493,7 +493,7 @@ const T = {
     undoAll:'今日のチェックを全て取り消す', undoConfirm:'今日のチェックを全て取り消しますか？',
     sec:{ wake:'起床', espiritual:'霊的な時間', treino:'トレーニング', pesagem:'週間体重測定', jacob:'ジェイコブとの時間',
           estudo:'勉強 — REVEGO OPC', refeicoes:'食事', agua:'水分 — 目標3,500ml', suplementos:'薬とサプリメント',
-          tempoChi:'チーとの時間', winddown:'一日の終わり', recuperacao:'未完了のトレーニング — 今週分を補う' },
+          tempoChi:'チーとの時間', winddown:'一日の終わり', recuperacao:'未完了のトレーニング — 今週分を補う', oracaoAlmoco:'昼の祈り' },
     task:{
       acordar5:'5時に起床', acordar6:'6時に起床',
       oracaoTreino:'祈り（2分話す＋1分沈黙＋1分聖書＋1分自由）', oracaoSimples:'起床後の祈り',
@@ -605,6 +605,142 @@ const WORKOUTS = {
 function exLabel(ex, lang){ return lang === 'pt' ? ex.pt : lang === 'en' ? ex.en : ex.ja; }
 function exNote(ex, lang){ if(!ex.notePt) return null; return lang === 'pt' ? ex.notePt : lang === 'en' ? ex.noteEn : ex.noteJa; }
 
+/* Weekly Prayer Journal — keyed by JS getDay() (0=Sunday..6=Saturday) */
+const WEEKLY_PRAYER = {
+  1: { // Monday
+    title: { pt:'Blum Western Team & Ex-colegas do Sunrise', en:'Blum Western Team & Former Colleagues at Sunrise', ja:'ブルム・ウェスタンチームとサンライズの元同僚' },
+    scripture: { pt:'Colossenses 3:23', en:'Colossians 3:23', ja:'コロサイ人への手紙 3:23' },
+    bullets: {
+      pt: ['Ore pelo Ron e pela Blum Western Team — unidade, criatividade e o favor de Deus em cada interação e decisão.',
+           'Peça discernimento pra enxergar além das transações — servir clientes com excelência, refletindo a boa mordomia de Deus.',
+           'Ore por sabedoria pra entender os produtos da Blum não só tecnicamente, mas como ferramentas que elevam vidas e espaços.',
+           'Levante os colegas do Sunrise — que seus caminhos sejam abençoados, e que a história compartilhada continue dando fruto.'],
+      en: ['Pray for Ron and the Blum Western Team: unity, creativity, and God\u2019s favor in every interaction and decision.',
+           'Ask for discernment to see beyond transactions — to serve clients with excellence and care, reflecting God\u2019s stewardship.',
+           'Pray for wisdom to understand Blum\u2019s products not just technically, but as tools to elevate lives and spaces.',
+           'Lift up Sunrise colleagues: may their paths be blessed, and may your shared history continue bearing fruit.'],
+      ja: ['ロンとブルム・ウェスタンチームのために — 一致、創造性、そしてすべての判断における神の恵みを祈る。',
+           '取引を超えて見る識別力を — 神の良い管理を映すように、誠実さと配慮でクライアントに仕える。',
+           'ブルムの製品を技術的にだけでなく、人生と空間を高める道具として理解する知恵を祈る。',
+           'サンライズの同僚たちのために — その歩みが祝福され、共に築いた歴史が実を結び続けるように。'],
+    }
+  },
+  2: { // Tuesday
+    title: { pt:'Família no Brasil', en:'Family in Brazil', ja:'ブラジルの家族' },
+    scripture: { pt:'Salmos 133:1', en:'Psalm 133:1', ja:'詩篇 133:1' },
+    bullets: {
+      pt: ['Ore pelo coração do Fernando — que se amoleça e se reconecte com sua mãe em amor e humildade.',
+           'Peça cura na dinâmica familiar, e a graça de Deus pra reescrever histórias geracionais.',
+           'Levante a Laci e o Guinho — por paz, saúde e proteção espiritual.',
+           'Ore por um legado de fé que crie raízes e floresça através das gerações.'],
+      en: ['Pray for Fernando\u2019s heart to soften and reconnect with your mom in love and humility.',
+           'Ask for healing in family dynamics and for God\u2019s grace to rewrite generational stories.',
+           'Lift up Laci and Guinho — for peace, health, and spiritual protection.',
+           'Pray for a legacy of faith to take root and flourish across generations.'],
+      ja: ['フェルナンドの心が柔らかくなり、愛と謙虚さの中でお母さんと再びつながれるように祈る。',
+           '家族関係の癒しと、世代を超えた物語を書き換える神の恵みを求める。',
+           'ラシとギーニョのために — 平安、健康、霊的な保護を祈る。',
+           '信仰の遺産が根を張り、世代を超えて花開くように祈る。'],
+    }
+  },
+  3: { // Wednesday
+    title: { pt:'Seu Pai (nos Céus)', en:'Your Father (In Heaven)', ja:'あなたのお父様（天国で）' },
+    scripture: { pt:'2 Timóteo 4:7', en:'2 Timothy 4:7', ja:'テモテへの手紙第二 4:7' },
+    bullets: {
+      pt: ['Agradeça a Deus pela vida do Gilberto e pelos valores que ele te passou.',
+           'Peça força pra honrar o legado dele através do seu trabalho e das suas relações.',
+           'Ore por cura e conforto contínuos nos momentos de lembrança.',
+           'Reflita sobre como a influência dele molda sua liderança e sua paternidade.'],
+      en: ['Thank God for Gilberto\u2019s life and the values he instilled in you.',
+           'Ask for strength to honor his legacy through your work and relationships.',
+           'Pray for continued healing and comfort in moments of remembrance.',
+           'Reflect on how his influence shapes your leadership and fatherhood.'],
+      ja: ['ジルベルトの人生と、彼が与えてくれた価値観に感謝する。',
+           '仕事と人間関係を通じて彼の遺産を称える力を求める。',
+           '思い出す瞬間における継続的な癒しと慰めを祈る。',
+           '彼の影響がリーダーシップと父親としての姿にどう表れているか振り返る。'],
+    }
+  },
+  4: { // Thursday
+    title: { pt:'Amigos no Brasil & Família do Mog', en:'Friends in Brazil & Mog\u2019s Family', ja:'ブラジルの友人とモグの家族' },
+    scripture: { pt:'Provérbios 17:17', en:'Proverbs 17:17', ja:'箴言 17:17' },
+    bullets: {
+      pt: ['Ore pelo crescimento espiritual, saúde emocional e bem-estar familiar dos seus amigos.',
+           'Agradeça a Deus pelas amizades que moldaram sua jornada e seu caráter.',
+           'Levante a família do Mog em Ottawa — proteção, alegria e provisão divina.',
+           'Peça oportunidades de ser uma bênção na vida deles, perto ou longe.'],
+      en: ['Pray for your friends\u2019 spiritual growth, emotional health, and family wellbeing.',
+           'Thank God for the friendships that shaped your journey and character.',
+           'Lift up Mog\u2019s family in Ottawa — for protection, joy, and divine provision.',
+           'Ask for opportunities to be a blessing in their lives, near or far.'],
+      ja: ['友人たちの霊的成長、心の健康、家族の幸福のために祈る。',
+           'あなたの人生と人格を形作ってきた友情に感謝する。',
+           'オタワのモグの家族のために — 保護、喜び、神の備えを祈る。',
+           '遠くても近くても、彼らの人生の祝福となる機会を求める。'],
+    }
+  },
+  5: { // Friday
+    title: { pt:'Família no Japão', en:'Family in Japan', ja:'日本の家族' },
+    scripture: { pt:'Tiago 1:17', en:'James 1:17', ja:'ヤコブの手紙 1:17' },
+    bullets: {
+      pt: ['Ore pela família da Chihiro — unidade, saúde e despertar espiritual.',
+           'Peça a Deus que construa pontes culturais com graça e entendimento mútuo.',
+           'Agradeça pela riqueza da herança japonesa na história da sua família.',
+           'Ore pela identidade do Jacob — enraizada em amor, verdade e propósito divino.'],
+      en: ['Pray for Chihiro\u2019s family — for unity, health, and spiritual awakening.',
+           'Ask God to bridge cultural gaps with grace and mutual understanding.',
+           'Thank Him for the richness of Japanese heritage in your family\u2019s story.',
+           'Pray for Jacob\u2019s identity to be rooted in love, truth, and divine purpose.'],
+      ja: ['チヒロの家族のために — 一致、健康、霊的な目覚めを祈る。',
+           '文化の違いを恵みと相互理解で橋渡ししてくださるよう神に求める。',
+           '家族の物語における日本の豊かな伝統に感謝する。',
+           'ジェイコブのアイデンティティが愛と真実と神の目的に根ざすように祈る。'],
+    }
+  },
+  6: { // Saturday
+    title: { pt:'Sua Esposa & Filho', en:'Your Wife & Son', ja:'あなたの妻と息子' },
+    scripture: { pt:'Josué 24:15', en:'Joshua 24:15', ja:'ヨシュア記 24:15' },
+    bullets: {
+      pt: ['Ore pra que a Chihiro e o Jacob experimentem o amor de Deus pessoal e profundamente.',
+           'Peça sabedoria e humildade pra liderar seu lar em fé e alegria.',
+           'Ore pelo crescimento do Jacob — física, emocional e espiritualmente.',
+           'Agradeça a Deus pelo dom da família e pelo chamado sagrado da paternidade.'],
+      en: ['Pray for Chihiro and Jacob to experience God\u2019s love personally and deeply.',
+           'Ask for wisdom and humility to lead your household in faith and joy.',
+           'Pray for Jacob\u2019s growth — physically, emotionally, and spiritually.',
+           'Thank God for the gift of family and the sacred calling of fatherhood.'],
+      ja: ['チヒロとジェイコブが神の愛を個人的に深く経験できるように祈る。',
+           '信仰と喜びの中で家庭を導む知恵と謙虚さを求める。',
+           'ジェイコブの成長のために — 身体的、感情的、霊的に祈る。',
+           '家族という贈り物と、父親としての聖なる使命に感謝する。'],
+    }
+  },
+  0: { // Sunday
+    title: { pt:'Reflexão, Gratidão & Liderança', en:'Reflection, Gratitude, & Leadership', ja:'振り返り、感謝、そしてリーダーシップ' },
+    scripture: { pt:'Salmos 46:10', en:'Psalm 46:10', ja:'詩篇 46:10' },
+    bullets: {
+      pt: ['Reflita sobre a semana: onde você viu a mão de Deus? Onde você precisa da ajuda dele?',
+           'Levante o Gary, a Marie, a Jasmine, o Martin — sabedoria, paz e propósito.',
+           'Ore pela liderança do Yoshi, e que um dia ele possa encontrar o amor de Deus.',
+           'Recomprometa seu trabalho, sua família e sua liderança à direção de Deus pra semana que vem.'],
+      en: ['Reflect on the week: where did you see God\u2019s hand? Where do you need His help?',
+           'Lift up Gary, Marie, Jasmine, Martin — for wisdom, peace, and purpose.',
+           'Pray for Yoshi\u2019s leadership and that he may one day encounter God\u2019s love.',
+           'Recommit your work, family, and leadership to God\u2019s guidance for the week ahead.'],
+      ja: ['今週を振り返る — どこで神の御手を見たか？どこで助けが必要か？',
+           'ゲイリー、マリー、ジャスミン、マーティンのために — 知恵、平安、目的を祈る。',
+           'ヨシのリーダーシップのために、そしていつか神の愛に出会えるように祈る。',
+           '仕事、家族、リーダーシップを、来週に向けて改めて神の導きに委ねる。'],
+    }
+  },
+};
+function dayOfYear(d){
+  const start = new Date(d.getFullYear(), 0, 0);
+  const diff = d - start;
+  return Math.floor(diff / 86400000);
+}
+
+
 function buildSections(date, lang){
   const t = T[lang];
   const type = getDayType(date);
@@ -673,6 +809,17 @@ function buildSections(date, lang){
     {id:'ceia', label:t.task.ceia},
   );
   sections.push({ id:'refeicoes', time:'', title:t.sec.refeicoes, tasks:refeicaoTasks });
+
+  const prayer = WEEKLY_PRAYER[wd];
+  const bulletText = prayer.bullets[lang].map(b => `• ${b}`).join('  ');
+  const doy = dayOfYear(date);
+  const devoLabel = lang === 'pt' ? `Devocional do dia — dia ${doy} de "One Year Devotions for Men"`
+    : lang === 'en' ? `Daily devotional — day ${doy} of "One Year Devotions for Men"`
+    : `今日のデボーション — 『One Year Devotions for Men』${doy}日目`;
+  sections.push({ id:'oracaoAlmoco', time:'12h', title:t.sec.oracaoAlmoco, tasks:[
+    { id:'oracaoTema', label:`${prayer.title[lang]} — ${prayer.scripture[lang]}`, note: bulletText },
+    { id:'devocionalAlmoco', label: devoLabel },
+  ]});
 
   sections.push({ id:'agua', time:'', title:t.sec.agua, tasks:[], isWater:true });
 
@@ -814,9 +961,15 @@ async function renderHoje(){
     if(pending.length){
       const box = document.createElement('div');
       box.className = 'section';
-      box.innerHTML = `<div class="section-head"><div class="st"><span class="section-title">${t.sec.recuperacao}</span></div></div>`;
+      box.innerHTML = `<div class="section-head" id="recuperacao-head" style="cursor:pointer;user-select:none;"><div class="st"><span class="section-title">${t.sec.recuperacao}</span></div><span class="time" id="recuperacao-arrow">▸</span></div>`;
       const body = document.createElement('div');
       body.className = 'section-body';
+      body.style.display = 'none';
+      box.querySelector('#recuperacao-head').addEventListener('click', () => {
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        box.querySelector('#recuperacao-arrow').textContent = open ? '▸' : '▾';
+      });
 
       for(const r of pending){
         const rec = await getDay(r.key);
