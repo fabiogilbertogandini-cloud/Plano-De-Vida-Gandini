@@ -186,6 +186,14 @@
   .task-comment-box.open{ display:block; }
   .task-comment-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
     border-radius:8px; padding:8px; font-size:12.5px; font-family:'Inter',sans-serif; resize:vertical; box-sizing:border-box; }
+  .photo-row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .photo-btn{ background:var(--surface-2); border:1px solid var(--border); color:var(--ink-dim); border-radius:8px;
+    padding:7px 12px; font-size:12px; cursor:pointer; }
+  .photo-preview{ max-width:60px; max-height:60px; border-radius:6px; border:1px solid var(--border); object-fit:cover; }
+  .photo-remove{ background:none; border:none; color:var(--coral); font-size:12px; cursor:pointer; text-decoration:underline; }
+  .comment-save-btn{ background:var(--amber); color:#1A1508; border:none; border-radius:8px; padding:6px 14px;
+    font-size:12px; font-weight:700; cursor:pointer; margin-top:8px; }
+  .comment-saved-msg{ font-size:11px; color:var(--sage); margin-left:8px; }
 
   .loading{ text-align:center; padding:40px; color:var(--ink-faint); font-size:13px; }
 </style>
@@ -878,6 +886,50 @@ function buildSections(date, lang){
 }
 
 /* ---------------- STORAGE ---------------- */
+const MEAL_TASK_IDS = ['cafe','lancheManha','almoco','lancheTarde','jantar','ceia'];
+
+function compressImage(file, maxWidth, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function cleanupOldPhotos(){
+  try{
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 60);
+    const cutoffKey = fmtKey(cutoff);
+    Object.keys(localStorage).filter(k => k.startsWith('gandini-day:')).forEach(k => {
+      const dateStr = k.replace('gandini-day:', '');
+      if(dateStr < cutoffKey){
+        try{
+          const rec = JSON.parse(localStorage.getItem(k));
+          let changed = false;
+          Object.keys(rec).forEach(field => {
+            if(field.startsWith('p_')){ delete rec[field]; changed = true; }
+          });
+          if(changed) localStorage.setItem(k, JSON.stringify(rec));
+        }catch(e){}
+      }
+    });
+  }catch(e){ console.error('cleanup error', e); }
+}
+
 async function getDay(key){
   try{
     const v = localStorage.getItem(`gandini-day:${key}`);
@@ -897,6 +949,7 @@ async function initApp(){
   }catch(e){}
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
 
+  cleanupOldPhotos();
   dayData = await getDay(todayKey);
   renderAll();
   switchTab('hoje');
@@ -1077,11 +1130,82 @@ function setChecked(taskId, val){
   renderSemanaIfActive();
 }
 
+function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBtn, onSaved){
+  const commentKey = `c_${taskId}`;
+  const photoKey = `p_${taskId}`;
+  const box = document.createElement('div');
+  box.className = 'task-comment-box';
+  let boxHtml = `<textarea rows="2" placeholder="comentário...">${dataObj[commentKey] || ''}</textarea>`;
+  if(isMeal){
+    boxHtml += `
+      <div class="photo-row">
+        <input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none">
+        <button class="photo-btn" type="button">📷 Foto</button>
+        <img class="photo-preview" style="${dataObj[photoKey] ? '' : 'display:none;'}" src="${dataObj[photoKey] || ''}">
+        <button class="photo-remove" type="button" style="${dataObj[photoKey] ? '' : 'display:none;'}">remover</button>
+      </div>`;
+  }
+  boxHtml += `<button class="comment-save-btn" type="button">Salvar</button><span class="comment-saved-msg"></span>`;
+  box.innerHTML = boxHtml;
+  container.appendChild(box);
+
+  let pendingPhoto = dataObj[photoKey] || null;
+  let photoRemoved = false;
+
+  if(isMeal){
+    const fileInput = box.querySelector('.photo-input');
+    const photoBtn = box.querySelector('.photo-btn');
+    const preview = box.querySelector('.photo-preview');
+    const removeBtn = box.querySelector('.photo-remove');
+    photoBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if(!file) return;
+      try{
+        const dataUrl = await compressImage(file, 500, 0.55);
+        pendingPhoto = dataUrl;
+        photoRemoved = false;
+        preview.src = dataUrl;
+        preview.style.display = '';
+        removeBtn.style.display = '';
+      }catch(e){ console.error('photo compress error', e); }
+    });
+    removeBtn.addEventListener('click', () => {
+      pendingPhoto = null;
+      photoRemoved = true;
+      preview.style.display = 'none';
+      removeBtn.style.display = 'none';
+      fileInput.value = '';
+    });
+  }
+
+  const saveBtn = box.querySelector('.comment-save-btn');
+  const savedMsg = box.querySelector('.comment-saved-msg');
+  const textarea = box.querySelector('textarea');
+  saveBtn.addEventListener('click', async () => {
+    dataObj[commentKey] = textarea.value;
+    if(isMeal){
+      if(photoRemoved){ delete dataObj[photoKey]; }
+      else if(pendingPhoto){ dataObj[photoKey] = pendingPhoto; }
+    }
+    await setDay(dataKey, dataObj);
+    const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
+    if(commentBtn) commentBtn.classList.toggle('has', hasContent);
+    savedMsg.textContent = 'Salvo ✓';
+    setTimeout(() => { savedMsg.textContent = ''; }, 1500);
+    if(onSaved) onSaved();
+  });
+
+  return box;
+}
+
 function renderTaskRow(task, groupIds){
   const row = document.createElement('div');
   row.className = 'task-row' + (getChecked(task.id) ? ' done' : '');
   const commentKey = `c_${task.id}`;
-  const hasComment = !!(dayData[commentKey] && dayData[commentKey].trim());
+  const photoKey = `p_${task.id}`;
+  const isMeal = MEAL_TASK_IDS.includes(task.id);
+  const hasComment = !!((dayData[commentKey] && dayData[commentKey].trim()) || (isMeal && dayData[photoKey]));
   let html = `
     <div class="task-row-main">
       <div class="check ${getChecked(task.id) ? 'done' : ''}" data-task="${task.id}">
@@ -1089,8 +1213,7 @@ function renderTaskRow(task, groupIds){
       </div>
       <div class="task-label">${task.label}</div>
       <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
-    </div>
-    <div class="task-comment-box"><textarea rows="2" placeholder="comentário...">${dayData[commentKey] || ''}</textarea></div>`;
+    </div>`;
   if(task.note){
     html += `<div class="task-note-inline">${task.note}</div>`;
   }
@@ -1111,15 +1234,9 @@ function renderTaskRow(task, groupIds){
     }
   });
   const commentBtn = row.querySelector('.comment-btn');
-  const commentBox = row.querySelector('.task-comment-box');
+  const commentBox = attachCommentBox(row, dayData, todayKey, task.id, isMeal, commentBtn);
   commentBtn.addEventListener('click', () => {
     commentBox.classList.toggle('open');
-  });
-  const textarea = row.querySelector('textarea');
-  textarea.addEventListener('input', () => {
-    dayData[commentKey] = textarea.value;
-    setDay(todayKey, dayData);
-    commentBtn.classList.toggle('has', textarea.value.trim().length > 0);
   });
   return row;
 }
@@ -1129,18 +1246,26 @@ function renderWater(){
   const wrap = document.createElement('div');
   const ml = dayData.agua_ml || 0;
   const goal = 3500;
+  const commentKey = 'c_agua';
+  const hasComment = !!(dayData[commentKey] && dayData[commentKey].trim());
   wrap.innerHTML = `
-    <div class="water-box">
-      <div class="water-btn" id="water-minus">−</div>
-      <div class="water-fill">
-        <div class="water-bar"><div class="water-bar-in" id="water-bar-in" style="width:${Math.min(100,(ml/goal*100))}%"></div></div>
-        <div class="water-txt" id="water-txt">${ml} / ${goal} ml</div>
+    <div class="task-row-main" style="padding:0 0 4px;">
+      <div class="water-box" style="flex:1;">
+        <div class="water-btn" id="water-minus">−</div>
+        <div class="water-fill">
+          <div class="water-bar"><div class="water-bar-in" id="water-bar-in" style="width:${Math.min(100,(ml/goal*100))}%"></div></div>
+          <div class="water-txt" id="water-txt">${ml} / ${goal} ml</div>
+        </div>
+        <div class="water-btn" id="water-plus">+</div>
       </div>
-      <div class="water-btn" id="water-plus">+</div>
+      <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
     </div>
   `;
   wrap.querySelector('#water-plus').addEventListener('click', () => adjustWater(250));
   wrap.querySelector('#water-minus').addEventListener('click', () => adjustWater(-250));
+  const commentBtn = wrap.querySelector('.comment-btn');
+  const commentBox = attachCommentBox(wrap, dayData, todayKey, 'agua', false, commentBtn);
+  commentBtn.addEventListener('click', () => { commentBox.classList.toggle('open'); });
   return wrap;
 }
 function adjustWater(delta){
@@ -1154,6 +1279,7 @@ function adjustWater(delta){
   updateArc();
   renderSemanaIfActive();
 }
+
 
 function updateArc(){
   const sections = buildSections(today, currentLang);
@@ -1278,15 +1404,20 @@ async function renderDayDetail(dateObj){
 
     if(sec.isWater){
       const ml = data.agua_ml || 0, goal = 3500;
+      const commentKey = 'c_agua';
+      const hasComment = !!(data[commentKey] && data[commentKey].trim());
       const wrap = document.createElement('div');
       wrap.innerHTML = `
-        <div class="water-box">
-          <div class="water-btn" data-act="minus">−</div>
-          <div class="water-fill">
-            <div class="water-bar"><div class="water-bar-in" style="width:${Math.min(100,(ml/goal*100))}%"></div></div>
-            <div class="water-txt">${ml} / ${goal} ml</div>
+        <div class="task-row-main" style="padding:0 0 4px;">
+          <div class="water-box" style="flex:1;">
+            <div class="water-btn" data-act="minus">−</div>
+            <div class="water-fill">
+              <div class="water-bar"><div class="water-bar-in" style="width:${Math.min(100,(ml/goal*100))}%"></div></div>
+              <div class="water-txt">${ml} / ${goal} ml</div>
+            </div>
+            <div class="water-btn" data-act="plus">+</div>
           </div>
-          <div class="water-btn" data-act="plus">+</div>
+          <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
         </div>`;
       const adjust = async (delta) => {
         data.agua_ml = Math.max(0, (data.agua_ml||0) + delta);
@@ -1297,22 +1428,28 @@ async function renderDayDetail(dateObj){
       };
       wrap.querySelector('[data-act="plus"]').addEventListener('click', () => adjust(250));
       wrap.querySelector('[data-act="minus"]').addEventListener('click', () => adjust(-250));
+      const commentBtn = wrap.querySelector('.comment-btn');
+      const commentBox = attachCommentBox(wrap, data, key, 'agua', false, commentBtn, () => {
+        if(key === todayKey) dayData = data;
+      });
+      commentBtn.addEventListener('click', () => { commentBox.classList.toggle('open'); });
       body.appendChild(wrap);
     } else {
       sec.tasks.forEach(tk => {
         const row = document.createElement('div');
         const done = !!data[tk.id];
-        row.className = 'task-row' + (done ? ' done' : '');
+        const isMeal = MEAL_TASK_IDS.includes(tk.id);
         const commentKey = `c_${tk.id}`;
-        const hasComment = !!(data[commentKey] && data[commentKey].trim());
+        const photoKey = `p_${tk.id}`;
+        const hasComment = !!((data[commentKey] && data[commentKey].trim()) || (isMeal && data[photoKey]));
+        row.className = 'task-row' + (done ? ' done' : '');
         let html = `<div class="task-row-main">
           <div class="check ${done ? 'done' : ''}">
             <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="task-label">${tk.label}</div>
           <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
-        </div>
-        <div class="task-comment-box"><textarea rows="2" placeholder="comentário...">${data[commentKey] || ''}</textarea></div>`;
+        </div>`;
         if(tk.note) html += `<div class="task-note-inline">${tk.note}</div>`;
         row.innerHTML = html;
         row.querySelector('.check').addEventListener('click', async () => {
@@ -1326,14 +1463,10 @@ async function renderDayDetail(dateObj){
           renderCalendarGrid();
         });
         const cBtn = row.querySelector('.comment-btn');
-        const cBox = row.querySelector('.task-comment-box');
-        cBtn.addEventListener('click', () => { cBox.classList.toggle('open'); });
-        row.querySelector('textarea').addEventListener('input', async (e) => {
-          data[commentKey] = e.target.value;
-          await setDay(key, data);
-          cBtn.classList.toggle('has', e.target.value.trim().length > 0);
-          if(key === todayKey){ dayData = data; }
+        const cBox = attachCommentBox(row, data, key, tk.id, isMeal, cBtn, () => {
+          if(key === todayKey) dayData = data;
         });
+        cBtn.addEventListener('click', () => { cBox.classList.toggle('open'); });
         body.appendChild(row);
       });
     }
