@@ -196,6 +196,15 @@
   .comment-saved-msg{ font-size:11px; color:var(--sage); margin-left:8px; }
 
   .loading{ text-align:center; padding:40px; color:var(--ink-faint); font-size:13px; }
+
+  html, body{ overscroll-behavior-y: contain; }
+
+  .water-bucket-wrap{ text-align:center; height:0; overflow:visible; }
+  .water-bucket{ display:none; font-size:36px; position:relative; margin:0 auto 8px; width:44px; }
+  .water-bucket.show{ display:block; animation: bucketPop .45s ease; }
+  .water-bucket .wb-check{ position:absolute; top:-6px; right:-8px; background:var(--sage); color:#0C0F14;
+    border-radius:50%; width:20px; height:20px; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+  @keyframes bucketPop{ 0%{ transform:scale(0); opacity:0; } 55%{ transform:scale(1.3); opacity:1; } 100%{ transform:scale(1); } }
 </style>
 </head>
 <body>
@@ -206,6 +215,7 @@
   <h1>Gandini 4.0</h1>
   <input type="password" id="pw" placeholder="senha / password / パスワード" autocomplete="off">
   <button onclick="tryUnlock()">Entrar</button>
+  <button id="gate-fp-btn" onclick="unlockWithFingerprint()" style="display:none;background:var(--surface-2);color:var(--ink);border:1px solid var(--border);margin-top:10px;">👆 Usar impressão digital</button>
   <div class="err" id="gate-err"></div>
 </div>
 
@@ -284,6 +294,7 @@
           <button class="btn-secondary" id="btn-pdf" onclick="gerarPDF()">—</button>
           <button class="btn-secondary" id="btn-clear" onclick="limparCamposMedida()">—</button>
           <button class="btn-secondary" id="btn-backup" onclick="exportBackup()">—</button>
+          <button class="btn-secondary" id="btn-fp-register" onclick="registerFingerprint()">👆 Cadastrar impressão digital</button>
           <div class="task-note-inline" id="backup-status" style="margin:6px 0 0 4px;"></div>
           <div class="save-msg" id="m-msg"></div>
         </div>
@@ -407,17 +418,101 @@ async function refreshGCalViews(){
   }
 }
 
+const UNLOCK_HOURS = 12;
+
+function unlockApp(){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const until = Date.now() + UNLOCK_HOURS * 60 * 60 * 1000;
+  try{ localStorage.setItem('gandini-unlocked-until', String(until)); }catch(e){}
+  initApp();
+}
+
+function checkPersistedUnlock(){
+  try{
+    const until = parseInt(localStorage.getItem('gandini-unlocked-until') || '0', 10);
+    if(until && Date.now() < until){
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initApp();
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
 function tryUnlock(){
   const val = document.getElementById('pw').value;
   if(val === PASSWORD){
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initApp();
+    unlockApp();
   } else {
     document.getElementById('gate-err').textContent = "Senha incorreta / Wrong password / パスワードが違います";
   }
 }
 document.getElementById('pw').addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+
+/* -------- Fingerprint (WebAuthn platform authenticator) -------- */
+function bufToB64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function b64ToBuf(b64){
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+function showFingerprintButtonIfAvailable(){
+  const btn = document.getElementById('gate-fp-btn');
+  if(!btn) return;
+  const hasCred = !!localStorage.getItem('gandini-fp-cred');
+  const supported = !!(window.PublicKeyCredential);
+  btn.style.display = (hasCred && supported) ? 'block' : 'none';
+}
+
+async function registerFingerprint(){
+  if(!window.PublicKeyCredential){ alert('Esse navegador não suporta login por impressão digital.'); return; }
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Gandini 4.0' },
+        user: { id: userId, name: 'fabio', displayName: 'Fábio Gandini' },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000,
+      }
+    });
+    localStorage.setItem('gandini-fp-cred', bufToB64(cred.rawId));
+    showFingerprintButtonIfAvailable();
+    alert('Impressão digital cadastrada! Da próxima vez você pode entrar com ela.');
+  }catch(e){
+    console.error('fingerprint register error', e);
+    alert('Não foi possível cadastrar a digital neste aparelho/navegador.');
+  }
+}
+
+async function unlockWithFingerprint(){
+  const credB64 = localStorage.getItem('gandini-fp-cred');
+  if(!credB64) return;
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: b64ToBuf(credB64), type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000,
+      }
+    });
+    unlockApp();
+  }catch(e){
+    console.error('fingerprint auth error', e);
+    document.getElementById('gate-err').textContent = 'Digital não reconhecida — usa a senha.';
+  }
+}
+
+if(!checkPersistedUnlock()){ showFingerprintButtonIfAvailable(); }
 
 /* ================= I18N ================= */
 const DIAS = {
@@ -1253,6 +1348,7 @@ function renderWater(){
   const commentKey = 'c_agua';
   const hasComment = !!(dayData[commentKey] && dayData[commentKey].trim());
   wrap.innerHTML = `
+    <div class="water-bucket-wrap"><div class="water-bucket ${ml >= goal ? 'show' : ''}" id="water-bucket">🪣<span class="wb-check">✓</span></div></div>
     <div class="task-row-main" style="padding:0 0 4px;">
       <div class="water-box" style="flex:1;">
         <div class="water-btn" id="water-minus">−</div>
@@ -1275,11 +1371,18 @@ function renderWater(){
 function adjustWater(delta){
   let ml = (dayData.agua_ml || 0) + delta;
   if(ml < 0) ml = 0;
+  const goal = 3500;
+  const wasFull = (dayData.agua_ml || 0) >= goal;
   dayData.agua_ml = ml;
   setDay(todayKey, dayData);
-  const goal = 3500;
   document.getElementById('water-bar-in').style.width = Math.min(100, (ml/goal*100)) + '%';
   document.getElementById('water-txt').textContent = `${ml} / ${goal} ml`;
+  const bucket = document.getElementById('water-bucket');
+  if(bucket){
+    const isFull = ml >= goal;
+    if(isFull && !wasFull){ bucket.classList.remove('show'); void bucket.offsetWidth; bucket.classList.add('show'); }
+    else if(!isFull){ bucket.classList.remove('show'); }
+  }
   updateArc();
   renderSemanaIfActive();
 }
