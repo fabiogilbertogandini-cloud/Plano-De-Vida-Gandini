@@ -284,6 +284,7 @@
           <button class="btn-secondary" id="btn-pdf" onclick="gerarPDF()">—</button>
           <button class="btn-secondary" id="btn-clear" onclick="limparCamposMedida()">—</button>
           <button class="btn-secondary" id="btn-backup" onclick="exportBackup()">—</button>
+          <div class="task-note-inline" id="backup-status" style="margin:6px 0 0 4px;"></div>
           <div class="save-msg" id="m-msg"></div>
         </div>
       </div>
@@ -467,6 +468,7 @@ const T = {
     medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
     btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Exportar relatório do mês (PDF)', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
+    backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
     confirmDeleteMedida:'Apagar essa medição?',
     perguntasTitle:'Perguntas — assim que ela responder', qPlaceholder:'Nova pergunta...', noQuestions:'Nenhuma pergunta ainda.',
@@ -511,6 +513,7 @@ const T = {
     medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
     btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Export monthly report (PDF)', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
+    backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
     confirmDeleteMedida:'Delete this measurement?',
     perguntasTitle:'Questions — as soon as she replies', qPlaceholder:'New question...', noQuestions:'No questions yet.',
@@ -555,6 +558,7 @@ const T = {
     medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
     btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'月次レポートを書き出す（PDF）', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
+    backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
     confirmDeleteMedida:'この測定記録を削除しますか？',
     perguntasTitle:'質問 — 返信があり次第', qPlaceholder:'新しい質問...', noQuestions:'質問はまだありません。',
@@ -1315,7 +1319,7 @@ function switchTab(name){
   if(name === 'hoje') refreshGCalViews();
   if(name === 'semana') renderSemana();
   if(name === 'calendario') { renderCalendarGrid(); renderDayDetail(today); }
-  if(name === 'medidas') { document.getElementById('m-data').value = todayKey; renderHistorico(); renderPerguntas(); loadLembreteField(); }
+  if(name === 'medidas') { document.getElementById('m-data').value = todayKey; renderHistorico(); renderPerguntas(); loadLembreteField(); renderBackupStatus(); }
 }
 function renderSemanaIfActive(){ if(document.getElementById('view-semana').classList.contains('active')) renderSemana(); }
 
@@ -1607,7 +1611,33 @@ function exportBackup(){
     a.href = url; a.download = `gandini-backup-${todayKey}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    localStorage.setItem('gandini-last-backup', todayKey);
+    renderBackupStatus();
   }catch(e){ console.error('backup export error', e); alert('Erro ao exportar backup.'); }
+}
+
+function renderBackupStatus(){
+  const el = document.getElementById('backup-status');
+  if(!el) return;
+  const t = T[currentLang];
+  const last = localStorage.getItem('gandini-last-backup');
+  if(!last){
+    el.textContent = t.backupNever;
+    el.style.color = 'var(--coral)';
+    return;
+  }
+  const lastDate = new Date(last + 'T00:00:00');
+  const diffDays = Math.floor((today - lastDate) / (1000*60*60*24));
+  if(diffDays <= 0){
+    el.textContent = t.backupToday;
+    el.style.color = 'var(--sage)';
+  } else if(diffDays <= 7){
+    el.textContent = `${t.backupDaysAgo} ${diffDays} ${diffDays === 1 ? t.backupDay : t.backupDays}`;
+    el.style.color = 'var(--ink-dim)';
+  } else {
+    el.textContent = `${t.backupOverdue} ${diffDays} ${diffDays === 1 ? t.backupDay : t.backupDays}`;
+    el.style.color = 'var(--coral)';
+  }
 }
 
 async function gerarRelatorioMensal(){
@@ -1616,30 +1646,66 @@ async function gerarRelatorioMensal(){
     const doc = new jsPDF();
     const pageH = doc.internal.pageSize.height;
     let y = 20;
-    function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
+    function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; drawTableHeader(); } }
 
     doc.setFont('helvetica','bold'); doc.setFontSize(15);
     doc.text(`Gandini 4.0 — Relatório de ${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`, 20, y);
     y += 10;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+
+    const COL = { data: 20, oracao: 55, treino: 80, agua: 105, supl: 130, box: 3 };
+
+    function drawCheckbox(x, yPos, done, dash){
+      doc.setDrawColor(0,0,0);
+      if(done){
+        doc.setFillColor(0,0,0);
+        doc.rect(x, yPos-2.6, COL.box, COL.box, 'FD');
+      } else if(dash){
+        doc.rect(x, yPos-2.6, COL.box, COL.box, 'S');
+        doc.line(x, yPos-2.6, x+COL.box, yPos+0.4);
+      } else {
+        doc.rect(x, yPos-2.6, COL.box, COL.box, 'S');
+      }
+    }
+
+    function drawTableHeader(){
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+      doc.text('Data', COL.data, y);
+      doc.text('Oração', COL.oracao, y);
+      doc.text('Treino', COL.treino, y);
+      doc.text('Água', COL.agua, y);
+      doc.text('Suplem.', COL.supl, y);
+      y += 5;
+      doc.setDrawColor(180,180,180);
+      doc.line(20, y-3.5, 190, y-3.5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    }
+    drawTableHeader();
 
     const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
     for(let d=1; d<=daysInMonth; d++){
       const dt = new Date(calMonth.getFullYear(), calMonth.getMonth(), d);
       const rec = await getDay(fmtKey(dt));
       const type = getDayType(dt);
-      const oracao = rec.oracao ? 'Sim' : 'Não';
-      const treino = type === 'treino' ? (rec.treino ? 'Sim' : 'Não') : '-';
-      const agua = (rec.agua_ml||0) >= 3500 ? 'Sim' : `${rec.agua_ml||0}ml`;
-      const supl = (rec.fluoxetine && rec.anfetamina && rec.vitD && rec.creatina) ? 'Sim' : 'Parcial';
+      const isTreinoDay = (type === 'treino');
+      const oracaoDone = !!rec.oracao;
+      const treinoDone = !!rec.treino;
+      const aguaDone = (rec.agua_ml||0) >= 3500;
+      const suplDone = !!(rec.fluoxetine && rec.anfetamina && rec.vitD && rec.creatina);
+
       ensureSpace(6);
-      doc.text(`${String(d).padStart(2,'0')}/${calMonth.getMonth()+1} (${DIAS.pt[dt.getDay()].slice(0,3)}) — Oração:${oracao}  Treino:${treino}  Água:${agua}  Suplementos:${supl}`, 20, y);
-      y += 5.5;
+      doc.setFont('helvetica','normal');
+      doc.text(`${String(d).padStart(2,'0')}/${String(calMonth.getMonth()+1).padStart(2,'0')} ${DIAS.pt[dt.getDay()].slice(0,3)}`, COL.data, y);
+      drawCheckbox(COL.oracao, y, oracaoDone);
+      if(isTreinoDay) drawCheckbox(COL.treino, y, treinoDone);
+      else doc.text('—', COL.treino, y);
+      drawCheckbox(COL.agua, y, aguaDone);
+      drawCheckbox(COL.supl, y, suplDone);
+      y += 6;
     }
 
-    y += 4; ensureSpace(10);
-    doc.setFont('helvetica','bold'); doc.text('Medidas registradas no mês:', 20, y); y += 7;
-    doc.setFont('helvetica','normal');
+    y += 5; ensureSpace(10);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Medidas registradas no mês:', 20, y); y += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
     const allMedidas = await getAllHistorico();
     const monthPrefix = `${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,'0')}`;
     const monthMedidas = allMedidas.filter(e => e.data && e.data.startsWith(monthPrefix));
