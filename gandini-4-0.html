@@ -231,6 +231,7 @@
     </div>
     <div class="lang-row">
       <div class="lang-btn" id="gcal-btn" onclick="connectGoogleCalendar()" style="min-width:150px;">📅 Google Calendar</div>
+      <div class="lang-btn" onclick="logoutApp()">🔒 Sair</div>
     </div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
@@ -428,6 +429,16 @@ function unlockApp(){
   initApp();
 }
 
+function logoutApp(){
+  if(!confirm('Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.')) return;
+  try{ localStorage.removeItem('gandini-unlocked-until'); }catch(e){}
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('gate').style.display = 'flex';
+  document.getElementById('pw').value = '';
+  showFingerprintButtonIfAvailable();
+}
+
+
 function checkPersistedUnlock(){
   try{
     const until = parseInt(localStorage.getItem('gandini-unlocked-until') || '0', 10);
@@ -512,7 +523,7 @@ async function unlockWithFingerprint(){
   }
 }
 
-if(!checkPersistedUnlock()){ showFingerprintButtonIfAvailable(); }
+/* checkPersistedUnlock() is called at the very end of this script, after all app state is defined — see bottom of file. */
 
 /* ================= I18N ================= */
 const DIAS = {
@@ -2026,6 +2037,9 @@ function gerarPDF(){
     doc.save(`gandini-medidas-${data}.pdf`);
   })();
 }
+
+/* Runs last, after every const/let/function above is fully defined, to avoid referencing them too early. */
+if(!checkPersistedUnlock()){ showFingerprintButtonIfAvailable(); }
 </script>
 </body>
 </html>
