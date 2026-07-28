@@ -1453,7 +1453,7 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   if(isMeal){
     boxHtml += `
       <div class="photo-row">
-        <input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none">
+        <input type="file" accept="image/*" class="photo-input" style="display:none">
         <button class="photo-btn" type="button">📷 ${t.photoBtn}</button>
         <img class="photo-preview" style="${dataObj[photoKey] ? '' : 'display:none;'}" src="${dataObj[photoKey] || ''}">
         <button class="photo-remove" type="button" style="${dataObj[photoKey] ? '' : 'display:none;'}">${t.removePhoto}</button>
