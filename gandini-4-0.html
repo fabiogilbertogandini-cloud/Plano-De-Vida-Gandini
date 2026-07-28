@@ -203,6 +203,14 @@
 
   html, body{ overscroll-behavior-y: contain; }
 
+  .report-panel{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:16px; }
+  .report-scope-row{ display:flex; gap:8px; margin-bottom:12px; }
+  .scope-btn{ flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink-dim);
+    border-radius:10px; padding:9px 0; font-size:13px; font-weight:600; cursor:pointer; }
+  .scope-btn.active{ background:var(--amber); color:#1A1508; border-color:var(--amber); }
+  .rep-check{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim); padding:5px 0; cursor:pointer; }
+  .rep-check input{ width:16px; height:16px; accent-color:var(--amber); }
+
   .water-bucket-wrap{ text-align:center; height:0; overflow:visible; }
   .water-bucket{ display:none; font-size:36px; position:relative; margin:0 auto 8px; width:44px; }
   .water-bucket.show{ display:block; animation: bucketPop .45s ease; }
@@ -276,7 +284,20 @@
         <div class="cal-nav-btn" id="cal-next-btn" onclick="navMonth(1)">›</div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
-      <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorioMensal()" style="margin-bottom:14px;">—</button>
+      <div class="report-panel" id="report-panel">
+        <div class="report-scope-row">
+          <button class="scope-btn" data-scope="dia">Dia</button>
+          <button class="scope-btn" data-scope="semana">Semana</button>
+          <button class="scope-btn active" data-scope="mes">Mês</button>
+        </div>
+        <label class="rep-check"><input type="checkbox" id="rep-refeicoes" checked> <span data-k="repRefeicoes">Refeições (com fotos e comentários)</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-espiritual" checked> <span data-k="repEspiritual">Espiritual</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-treino" checked> <span data-k="repTreino">Treino</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-agua" checked> <span data-k="repAgua">Água</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-medidas" checked> <span data-k="repMedidas">Medidas corporais</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-medicamentos"> <span data-k="repMed">🔒 Medicamentos (confidencial)</span></label>
+        <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorio()">—</button>
+      </div>
       <div id="cal-detail"></div>
     </div>
 
@@ -577,7 +598,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
-    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Exportar relatório do mês (PDF)', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
+    btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Gerar PDF do relatório', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
     confirmDeleteMedida:'Apagar essa medição?',
@@ -622,7 +643,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
-    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Export monthly report (PDF)', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
+    btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Generate report PDF', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
     confirmDeleteMedida:'Delete this measurement?',
@@ -667,7 +688,7 @@ const T = {
     week:{ label:'—' },
     medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
-    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'月次レポートを書き出す（PDF）', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
+    btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'レポートPDFを作成', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
     confirmDeleteMedida:'この測定記録を削除しますか？',
@@ -1056,6 +1077,7 @@ async function setDay(key, data){
 }
 
 let dayData = {};
+let medUnlocked = false; // resets every page load — Medicamentos section stays locked until password is entered this session
 
 async function initApp(){
   try{
@@ -1136,6 +1158,23 @@ async function renderHoje(){
 
     const body = document.createElement('div');
     body.className = 'section-body';
+
+    if(sec.id === 'suplementos' && !medUnlocked){
+      const lockBtn = document.createElement('button');
+      lockBtn.className = 'btn-secondary';
+      lockBtn.style.width = '100%';
+      lockBtn.textContent = '🔒 Toque pra ver (confidencial)';
+      lockBtn.addEventListener('click', () => {
+        const val = prompt('Senha:');
+        if(val === null) return;
+        if(val === PASSWORD){ medUnlocked = true; renderHoje(); }
+        else alert('Senha incorreta.');
+      });
+      body.appendChild(lockBtn);
+      box.appendChild(body);
+      container.appendChild(box);
+      return;
+    }
 
     if(sec.isWater){
       body.appendChild(renderWater());
@@ -1444,6 +1483,8 @@ function renderSemanaIfActive(){ if(document.getElementById('view-semana').class
 
 /* ---------------- CALENDÁRIO ---------------- */
 let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+let calSelectedDate = today;
+let reportScope = 'mes';
 const CAL_MAX = new Date(2026, 11, 31);
 
 function navMonth(delta){
@@ -1497,6 +1538,7 @@ async function renderCalendarGrid(){
 }
 
 async function renderDayDetail(dateObj){
+  calSelectedDate = dateObj;
   const key = fmtKey(dateObj);
   const data = await getDay(key);
   const sections = buildSections(dateObj, currentLang);
@@ -1557,6 +1599,18 @@ async function renderDayDetail(dateObj){
       });
       commentBtn.addEventListener('click', () => { commentBox.classList.toggle('open'); });
       body.appendChild(wrap);
+    } else if(sec.id === 'suplementos' && !medUnlocked){
+      const lockBtn = document.createElement('button');
+      lockBtn.className = 'btn-secondary';
+      lockBtn.style.width = '100%';
+      lockBtn.textContent = '🔒 Toque pra ver (confidencial)';
+      lockBtn.addEventListener('click', () => {
+        const val = prompt('Senha:');
+        if(val === null) return;
+        if(val === PASSWORD){ medUnlocked = true; renderDayDetail(dateObj); }
+        else alert('Senha incorreta.');
+      });
+      body.appendChild(lockBtn);
     } else {
       sec.tasks.forEach(tk => {
         const row = document.createElement('div');
@@ -1760,86 +1814,133 @@ function renderBackupStatus(){
   }
 }
 
-async function gerarRelatorioMensal(){
+function initReportPanel(){
+  document.querySelectorAll('.scope-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reportScope = btn.dataset.scope;
+      document.querySelectorAll('.scope-btn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+  const medCheck = document.getElementById('rep-medicamentos');
+  medCheck.addEventListener('change', () => {
+    if(medCheck.checked && !medUnlocked){
+      const val = prompt('Senha:');
+      if(val === PASSWORD){ medUnlocked = true; }
+      else { medCheck.checked = false; if(val !== null) alert('Senha incorreta.'); }
+    }
+  });
+}
+
+const MEAL_LABELS = {
+  cafe:{pt:'Café da manhã', en:'Breakfast', ja:'朝食'},
+  lancheManha:{pt:'Lanche da manhã', en:'Morning snack', ja:'午前の間食'},
+  almoco:{pt:'Almoço', en:'Lunch', ja:'昼食'},
+  lancheTarde:{pt:'Lanche da tarde', en:'Afternoon snack', ja:'午後の間食'},
+  jantar:{pt:'Jantar', en:'Dinner', ja:'夕食'},
+  ceia:{pt:'Ceia', en:'Late snack', ja:'夜食'},
+};
+
+async function gerarRelatorio(){
   try{
+    const incl = {
+      refeicoes: document.getElementById('rep-refeicoes').checked,
+      espiritual: document.getElementById('rep-espiritual').checked,
+      treino: document.getElementById('rep-treino').checked,
+      agua: document.getElementById('rep-agua').checked,
+      medidas: document.getElementById('rep-medidas').checked,
+      medicamentos: document.getElementById('rep-medicamentos').checked && medUnlocked,
+    };
+
+    let dates = [];
+    let titlePeriod = '';
+    if(reportScope === 'dia'){
+      dates = [calSelectedDate];
+      titlePeriod = `${String(calSelectedDate.getDate()).padStart(2,'0')}/${String(calSelectedDate.getMonth()+1).padStart(2,'0')}/${calSelectedDate.getFullYear()}`;
+    } else if(reportScope === 'semana'){
+      const monday = startOfWeek(calSelectedDate);
+      for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
+      titlePeriod = `Semana de ${monday.getDate()}/${monday.getMonth()+1}`;
+    } else {
+      const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
+      for(let d=1; d<=daysInMonth; d++){ dates.push(new Date(calMonth.getFullYear(), calMonth.getMonth(), d)); }
+      titlePeriod = `${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`;
+    }
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageH = doc.internal.pageSize.height;
     let y = 20;
-    function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; drawTableHeader(); } }
+    function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
 
     doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text(`Gandini 4.0 — Relatório de ${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`, 20, y);
-    y += 10;
+    doc.text(`Gandini 4.0 — Relatório (${titlePeriod})`, 20, y); y += 10;
 
-    const COL = { data: 20, oracao: 55, treino: 80, agua: 105, supl: 130, box: 3 };
+    for(const dt of dates){
+      const rec = await getDay(fmtKey(dt));
+      const type = getDayType(dt);
+      ensureSpace(9);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
+      doc.text(`${DIAS.pt[dt.getDay()]} ${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`, 20, y);
+      y += 6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
 
-    function drawCheckbox(x, yPos, done, dash){
-      doc.setDrawColor(0,0,0);
-      if(done){
-        doc.setFillColor(0,0,0);
-        doc.rect(x, yPos-2.6, COL.box, COL.box, 'FD');
-      } else if(dash){
-        doc.rect(x, yPos-2.6, COL.box, COL.box, 'S');
-        doc.line(x, yPos-2.6, x+COL.box, yPos+0.4);
-      } else {
-        doc.rect(x, yPos-2.6, COL.box, COL.box, 'S');
+      if(incl.espiritual){
+        ensureSpace(6);
+        doc.text(`Oração: ${rec.oracao ? '[X]' : '[ ]'}`, 24, y); y += 5;
+        if(rec.c_oracao){ ensureSpace(6); doc.setFont('helvetica','italic'); doc.text(`"${rec.c_oracao}"`, 28, y); doc.setFont('helvetica','normal'); y += 5; }
+      }
+      if(incl.treino && type === 'treino'){
+        ensureSpace(6);
+        doc.text(`Treino: ${rec.treino ? '[X]' : '[ ]'}`, 24, y); y += 5;
+      }
+      if(incl.agua){
+        ensureSpace(6);
+        doc.text(`Água: ${rec.agua_ml||0} / 3500ml`, 24, y); y += 5;
+        if(rec.c_agua){ ensureSpace(6); doc.setFont('helvetica','italic'); doc.text(`"${rec.c_agua}"`, 28, y); doc.setFont('helvetica','normal'); y += 5; }
+      }
+      if(incl.medicamentos){
+        ensureSpace(6);
+        doc.text(`Medicamentos — Fluoxetine:${rec.fluoxetine?'X':'-'} Anfetamina:${rec.anfetamina?'X':'-'} VitD:${rec.vitD?'X':'-'} Creatina:${rec.creatina?'X':'-'}`, 24, y);
+        y += 5;
+      }
+      if(incl.refeicoes){
+        ensureSpace(6);
+        doc.setFont('helvetica','bold'); doc.text('Refeições:', 24, y); y += 5.5; doc.setFont('helvetica','normal');
+        for(const mealId of MEAL_TASK_IDS){
+          const label = MEAL_LABELS[mealId].pt;
+          const done = rec[mealId];
+          const comment = rec[`c_${mealId}`];
+          const photo = rec[`p_${mealId}`];
+          ensureSpace(photo ? 32 : 6);
+          doc.text(`${done ? '[X]' : '[ ]'} ${label}${comment ? ' — ' + comment : ''}`, 26, y);
+          y += 5.5;
+          if(photo){
+            try{ doc.addImage(photo, 'JPEG', 26, y, 30, 30); y += 33; }
+            catch(e){ console.error('photo embed error', e); }
+          }
+        }
+      }
+      y += 4;
+    }
+
+    if(incl.medidas){
+      ensureSpace(10);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Medidas registradas no período:', 20, y); y += 7;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      const allMedidas = await getAllHistorico();
+      const dateKeys = new Set(dates.map(d => fmtKey(d)));
+      const inRange = allMedidas.filter(e => dateKeys.has(e.data));
+      if(inRange.length === 0){ ensureSpace(6); doc.text('Nenhuma medição registrada.', 20, y); y += 6; }
+      else{
+        inRange.forEach(e => {
+          ensureSpace(6);
+          doc.text(`${e.data} — peso: ${e.peso||'—'}kg, cintura: ${e.cintura||'—'}cm, abdômen: ${e.abdomen||'—'}cm`, 20, y);
+          y += 5.5;
+        });
       }
     }
 
-    function drawTableHeader(){
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-      doc.text('Data', COL.data, y);
-      doc.text('Oração', COL.oracao, y);
-      doc.text('Treino', COL.treino, y);
-      doc.text('Água', COL.agua, y);
-      doc.text('Suplem.', COL.supl, y);
-      y += 5;
-      doc.setDrawColor(180,180,180);
-      doc.line(20, y-3.5, 190, y-3.5);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9);
-    }
-    drawTableHeader();
-
-    const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
-    for(let d=1; d<=daysInMonth; d++){
-      const dt = new Date(calMonth.getFullYear(), calMonth.getMonth(), d);
-      const rec = await getDay(fmtKey(dt));
-      const type = getDayType(dt);
-      const isTreinoDay = (type === 'treino');
-      const oracaoDone = !!rec.oracao;
-      const treinoDone = !!rec.treino;
-      const aguaDone = (rec.agua_ml||0) >= 3500;
-      const suplDone = !!(rec.fluoxetine && rec.anfetamina && rec.vitD && rec.creatina);
-
-      ensureSpace(6);
-      doc.setFont('helvetica','normal');
-      doc.text(`${String(d).padStart(2,'0')}/${String(calMonth.getMonth()+1).padStart(2,'0')} ${DIAS.pt[dt.getDay()].slice(0,3)}`, COL.data, y);
-      drawCheckbox(COL.oracao, y, oracaoDone);
-      if(isTreinoDay) drawCheckbox(COL.treino, y, treinoDone);
-      else doc.text('—', COL.treino, y);
-      drawCheckbox(COL.agua, y, aguaDone);
-      drawCheckbox(COL.supl, y, suplDone);
-      y += 6;
-    }
-
-    y += 5; ensureSpace(10);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Medidas registradas no mês:', 20, y); y += 7;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9);
-    const allMedidas = await getAllHistorico();
-    const monthPrefix = `${calMonth.getFullYear()}-${String(calMonth.getMonth()+1).padStart(2,'0')}`;
-    const monthMedidas = allMedidas.filter(e => e.data && e.data.startsWith(monthPrefix));
-    if(monthMedidas.length === 0){
-      ensureSpace(6); doc.text('Nenhuma medição registrada.', 20, y); y += 6;
-    } else {
-      monthMedidas.forEach(e => {
-        ensureSpace(6);
-        doc.text(`${e.data} — peso: ${e.peso||'—'}kg, cintura: ${e.cintura||'—'}cm, abdômen: ${e.abdomen||'—'}cm`, 20, y);
-        y += 5.5;
-      });
-    }
-
-    doc.save(`gandini-relatorio-${monthPrefix}.pdf`);
+    doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}.pdf`);
   }catch(e){ console.error('relatorio error', e); alert('Erro ao gerar relatório.'); }
 }
 
@@ -2045,6 +2146,7 @@ function gerarPDF(){
 }
 
 /* Runs last, after every const/let/function above is fully defined, to avoid referencing them too early. */
+initReportPanel();
 if(!checkPersistedUnlock()){ showFingerprintButtonIfAvailable(); }
 </script>
 </body>
