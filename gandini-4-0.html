@@ -313,6 +313,7 @@
         <label class="rep-check"><input type="checkbox" id="rep-treino" checked> <span data-k="repTreino">Treino</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-agua" checked> <span data-k="repAgua">Água</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-medidas" checked> <span data-k="repMedidas">Medidas corporais</span></label>
+        <label class="rep-check"><input type="checkbox" id="rep-suplementos" checked> <span data-k="repSupl">Suplementos</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-medicamentos"> <span data-k="repMed">🔒 Medicamentos (confidencial)</span></label>
         <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorio()">—</button>
       </div>
@@ -2044,6 +2045,7 @@ async function gerarRelatorio(){
       treino: document.getElementById('rep-treino').checked,
       agua: document.getElementById('rep-agua').checked,
       medidas: document.getElementById('rep-medidas').checked,
+      suplementos: document.getElementById('rep-suplementos').checked,
       medicamentos: document.getElementById('rep-medicamentos').checked && medUnlocked,
     };
 
@@ -2094,9 +2096,18 @@ async function gerarRelatorio(){
         doc.text(`Água: ${rec.agua_ml||0} / 3500ml`, 24, y); y += 5;
         if(rec.c_agua){ ensureSpace(6); doc.setFont('helvetica','italic'); doc.text(`"${rec.c_agua}"`, 28, y); doc.setFont('helvetica','normal'); y += 5; }
       }
+      if(incl.suplementos){
+        ensureSpace(6);
+        const suplList = getSuplementosList().filter(s => s.ativo);
+        const suplTxt = suplList.length
+          ? suplList.map(s => `${s.nome}:${rec[s.id] ? 'X' : '-'}`).join('  ')
+          : '(nenhum suplemento ativo)';
+        doc.text(`Suplementos — ${suplTxt}`, 24, y);
+        y += 5;
+      }
       if(incl.medicamentos){
         ensureSpace(6);
-        doc.text(`Medicamentos — Fluoxetine:${rec.fluoxetine?'X':'-'} Anfetamina:${rec.anfetamina?'X':'-'} VitD:${rec.vitD?'X':'-'} Creatina:${rec.creatina?'X':'-'}`, 24, y);
+        doc.text(`Medicamentos — Fluoxetine:${rec.fluoxetine?'X':'-'} Anfetamina:${rec.anfetamina?'X':'-'}`, 24, y);
         y += 5;
       }
       if(incl.refeicoes){
