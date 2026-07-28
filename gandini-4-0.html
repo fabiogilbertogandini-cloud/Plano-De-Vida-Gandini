@@ -198,6 +198,11 @@
   .comment-save-btn{ background:var(--amber); color:#1A1508; border:none; border-radius:8px; padding:6px 14px;
     font-size:12px; font-weight:700; cursor:pointer; margin-top:8px; }
   .comment-saved-msg{ font-size:11px; color:var(--sage); margin-left:8px; }
+  .link-btn{ background:none; border:none; color:var(--ink-faint); font-size:11.5px; cursor:pointer; padding:0; text-decoration:underline; }
+
+  .pct-ring{ width:22px; height:22px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; }
+  .pct-ring.today{ box-shadow:0 0 0 2px var(--amber); }
+  .pct-ring-inner{ width:15px; height:15px; border-radius:50%; background:var(--surface); }
 
   .loading{ text-align:center; padding:40px; color:var(--ink-faint); font-size:13px; }
 
@@ -656,6 +661,7 @@ const T = {
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
     btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Gerar PDF do relatório', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
+    commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
     confirmDeleteMedida:'Apagar essa medição?',
     perguntasTitle:'Perguntas — assim que ela responder', qPlaceholder:'Nova pergunta...', noQuestions:'Nenhuma pergunta ainda.',
@@ -701,6 +707,7 @@ const T = {
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
     btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Generate report PDF', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
+    commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
     confirmDeleteMedida:'Delete this measurement?',
     perguntasTitle:'Questions — as soon as she replies', qPlaceholder:'New question...', noQuestions:'No questions yet.',
@@ -746,6 +753,7 @@ const T = {
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
     btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'レポートPDFを作成', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
+    commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
     confirmDeleteMedida:'この測定記録を削除しますか？',
     perguntasTitle:'質問 — 返信があり次第', qPlaceholder:'新しい質問...', noQuestions:'質問はまだありません。',
@@ -1054,10 +1062,10 @@ function buildSections(date, lang){
 
   sections.push({ id:'agua', time:'', title:t.sec.agua, tasks:[], isWater:true });
 
-  sections.push({ id:'suplementos', time:'', title:t.sec.suplementos, tasks:[
-    {id:'vitD', label:t.task.vitD},
-    {id:'creatina', label:t.task.creatina},
-  ]});
+  const suplList = getSuplementosList();
+  sections.push({ id:'suplementos', time:'', title:t.sec.suplementos, isSuplementos:true, tasks:
+    suplList.filter(s => s.ativo).map(s => ({ id:s.id, label:s.nome }))
+  });
 
   sections.push({ id:'medicamentos', time:'', title:t.sec.medicamentos, tasks:[
     {id:'fluoxetine', label:t.task.fluoxetine},
@@ -1081,6 +1089,48 @@ function buildSections(date, lang){
 }
 
 /* ---------------- STORAGE ---------------- */
+function getSuplementosList(){
+  try{
+    const raw = localStorage.getItem('gandini-suplementos-list');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  const seed = [
+    { id:'vitD', nome:'Vitamina D', ativo:true },
+    { id:'creatina', nome:'Creatina', ativo:true },
+  ];
+  saveSuplementosList(seed);
+  return seed;
+}
+function saveSuplementosList(list){
+  try{ localStorage.setItem('gandini-suplementos-list', JSON.stringify(list)); }catch(e){}
+}
+function addSuplemento(nome){
+  if(!nome || !nome.trim()) return;
+  const list = getSuplementosList();
+  list.push({ id: 'sup_' + Date.now(), nome: nome.trim(), ativo: true });
+  saveSuplementosList(list);
+  renderHoje();
+}
+function pauseSuplemento(id){
+  const list = getSuplementosList();
+  const item = list.find(s => s.id === id);
+  if(item){ item.ativo = !item.ativo; saveSuplementosList(list); renderHoje(); }
+}
+function deleteSuplemento(id){
+  if(!confirm('Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)')) return;
+  let list = getSuplementosList();
+  list = list.filter(s => s.id !== id);
+  saveSuplementosList(list);
+  renderHoje();
+}
+
+function suplementosFrac(dt){
+  const active = getSuplementosList().filter(s => s.ativo);
+  if(active.length === 0) return 1;
+  const done = active.filter(s => !!dt[s.id]).length;
+  return done / active.length;
+}
+
 const MEAL_TASK_IDS = ['cafe','lancheManha','almoco','lancheTarde','jantar','ceia'];
 
 function compressImage(file, maxWidth, quality){
@@ -1237,6 +1287,58 @@ async function renderHoje(){
     } else {
       sec.tasks.forEach(tk => body.appendChild(renderTaskRow(tk, sec.groupIds)));
     }
+
+    if(sec.id === 'medicamentos' && medUnlocked){
+      const hideBtn = document.createElement('button');
+      hideBtn.className = 'btn-secondary';
+      hideBtn.style.cssText = 'width:100%;margin-top:8px;';
+      hideBtn.textContent = '🔒 Esconder de novo';
+      hideBtn.addEventListener('click', () => { medUnlocked = false; renderHoje(); });
+      body.appendChild(hideBtn);
+    }
+
+    if(sec.isSuplementos){
+      const suplList = getSuplementosList();
+      const paused = suplList.filter(s => !s.ativo);
+      suplList.filter(s => s.ativo).forEach(item => {
+        const row = body.querySelector(`.task-row [data-task="${item.id}"]`)?.closest('.task-row');
+        if(!row) return;
+        const mgmtRow = document.createElement('div');
+        mgmtRow.style.cssText = 'display:flex;gap:10px;margin:-4px 0 6px 36px;';
+        mgmtRow.innerHTML = `<button class="link-btn" data-act="pause" data-id="${item.id}">⏸ pausar</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 remover</button>`;
+        row.after(mgmtRow);
+        mgmtRow.querySelector('[data-act="pause"]').addEventListener('click', () => pauseSuplemento(item.id));
+        mgmtRow.querySelector('[data-act="del"]').addEventListener('click', () => deleteSuplemento(item.id));
+      });
+      if(paused.length){
+        const pausedWrap = document.createElement('div');
+        pausedWrap.style.cssText = 'margin-top:6px;';
+        pausedWrap.innerHTML = `<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px;">Pausados:</div>`;
+        paused.forEach(item => {
+          const r = document.createElement('div');
+          r.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 0;color:var(--ink-faint);font-size:13px;';
+          r.innerHTML = `<span style="text-decoration:line-through;">${item.nome}</span>`;
+          const btnRow = document.createElement('div');
+          btnRow.style.cssText = 'display:flex;gap:10px;';
+          btnRow.innerHTML = `<button class="link-btn" data-act="resume" data-id="${item.id}">▶ reativar</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 remover</button>`;
+          r.appendChild(btnRow);
+          pausedWrap.appendChild(r);
+          btnRow.querySelector('[data-act="resume"]').addEventListener('click', () => pauseSuplemento(item.id));
+          btnRow.querySelector('[data-act="del"]').addEventListener('click', () => deleteSuplemento(item.id));
+        });
+        body.appendChild(pausedWrap);
+      }
+      const addRow = document.createElement('div');
+      addRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+      addRow.innerHTML = `<input type="text" placeholder="novo suplemento..." style="flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:8px;font-size:13px;box-sizing:border-box;"><button class="btn-secondary" style="padding:8px 16px;">+</button>`;
+      body.appendChild(addRow);
+      const addInput = addRow.querySelector('input');
+      const addBtn = addRow.querySelector('button');
+      const doAdd = () => { addSuplemento(addInput.value); };
+      addBtn.addEventListener('click', doAdd);
+      addInput.addEventListener('keydown', e => { if(e.key === 'Enter') doAdd(); });
+    }
+
     if(sec.note){
       const n = document.createElement('div');
       n.className = 'task-note-inline';
@@ -1341,21 +1443,22 @@ function setChecked(taskId, val){
 }
 
 function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBtn, onSaved){
+  const t = T[currentLang];
   const commentKey = `c_${taskId}`;
   const photoKey = `p_${taskId}`;
   const box = document.createElement('div');
   box.className = 'task-comment-box';
-  let boxHtml = `<textarea rows="2" placeholder="comentário...">${dataObj[commentKey] || ''}</textarea>`;
+  let boxHtml = `<textarea rows="2" placeholder="${t.commentPlaceholder}">${dataObj[commentKey] || ''}</textarea>`;
   if(isMeal){
     boxHtml += `
       <div class="photo-row">
         <input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none">
-        <button class="photo-btn" type="button">📷 Foto</button>
+        <button class="photo-btn" type="button">📷 ${t.photoBtn}</button>
         <img class="photo-preview" style="${dataObj[photoKey] ? '' : 'display:none;'}" src="${dataObj[photoKey] || ''}">
-        <button class="photo-remove" type="button" style="${dataObj[photoKey] ? '' : 'display:none;'}">remover</button>
+        <button class="photo-remove" type="button" style="${dataObj[photoKey] ? '' : 'display:none;'}">${t.removePhoto}</button>
       </div>`;
   }
-  boxHtml += `<button class="comment-save-btn" type="button">Salvar</button><span class="comment-saved-msg"></span>`;
+  boxHtml += `<button class="comment-save-btn" type="button">${t.btnSave}</button><span class="comment-saved-msg"></span>`;
   box.innerHTML = boxHtml;
   container.appendChild(box);
 
@@ -1401,7 +1504,7 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
     await setDay(dataKey, dataObj);
     const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
     if(commentBtn) commentBtn.classList.toggle('has', hasContent);
-    savedMsg.textContent = 'Salvo ✓';
+    savedMsg.textContent = t.savedMsg;
     setTimeout(() => { savedMsg.textContent = ''; }, 1500);
     if(onSaved) onSaved();
   });
@@ -1700,6 +1803,14 @@ async function renderDayDetail(dateObj){
         cBtn.addEventListener('click', () => { cBox.classList.toggle('open'); });
         body.appendChild(row);
       });
+      if(sec.id === 'medicamentos' && medUnlocked){
+        const hideBtn = document.createElement('button');
+        hideBtn.className = 'btn-secondary';
+        hideBtn.style.cssText = 'width:100%;margin-top:8px;';
+        hideBtn.textContent = '🔒 Esconder de novo';
+        hideBtn.addEventListener('click', () => { medUnlocked = false; renderDayDetail(dateObj); });
+        body.appendChild(hideBtn);
+      }
     }
     if(sec.note){
       const n = document.createElement('div');
@@ -1746,7 +1857,7 @@ async function renderSemana(){
         if(type !== 'treino') continue;
         ok = !!dt['treino'];
       } else if(cat.key === 'suplementosOk'){
-        ok = dt.vitD && dt.creatina;
+        ok = suplementosFrac(dt) === 1;
       } else {
         ok = !!dt[cat.key];
       }
@@ -1767,8 +1878,27 @@ async function renderSemana(){
     { key:'treino', label:t.streak.treino },
     { key:'aguaOk', label:t.water.label.split(' —')[0] },
     { key:'suplementosOk', label:t.streak.suplementos },
+    { key:'medicamentos', label:t.sec.medicamentos },
     { key:'tempoChi', label:t.sec.tempoChi },
   ];
+
+  function treinoFrac(dt, d){
+    const letra = TREINO_LETRA[d.getDay()];
+    const exs = WORKOUTS[letra] || [];
+    if(exs.length === 0) return 0;
+    const done = exs.filter(ex => !!dt[`tr_${ex.id}`]).length;
+    return done / exs.length;
+  }
+  function ringColor(pct){
+    if(pct >= 90) return '#5AA9E6';
+    if(pct >= 50) return 'var(--sage)';
+    if(pct > 0) return 'var(--amber)';
+    return 'var(--border)';
+  }
+  function ringHTML(pct, isToday){
+    const color = ringColor(pct);
+    return `<div class="pct-ring ${isToday ? 'today' : ''}" style="background:conic-gradient(${color} ${pct*3.6}deg, var(--border) 0deg);"><div class="pct-ring-inner"></div></div>`;
+  }
 
   html += '<div class="week-grid"><table class="wk"><thead><tr><th style="text-align:left;">&nbsp;</th>';
   weekDates.forEach(d => {
@@ -1777,22 +1907,28 @@ async function renderSemana(){
   html += '</tr></thead><tbody>';
 
   HABIT_ROWS.forEach(row => {
-    html += `<tr><td class="label">${row.label}</td>`;
+    const labelHtml = row.key === 'medicamentos' && !medUnlocked
+      ? `<span class="link-btn" id="semana-med-unlock" style="font-size:12.5px;">🔒 ${row.label}</span>`
+      : row.label;
+    html += `<tr><td class="label">${labelHtml}</td>`;
     weekDates.forEach((d, idx) => {
       const dt = weekData[idx];
       const type = getDayType(d);
-      let on = false, applicable = true;
-      if(row.key === 'treino'){ applicable = type === 'treino'; on = !!dt['treino']; }
-      else if(row.key === 'aguaOk'){ on = (dt.agua_ml||0) >= 3500; }
-      else if(row.key === 'suplementosOk'){ on = dt.vitD && dt.creatina; }
-      else if(row.key === 'tempoChi'){ applicable = [1,3,5].includes(d.getDay()); on = !!dt['tempoChi']; }
-      else { on = !!dt[row.key]; }
+      let pct = 0, applicable = true;
+      if(row.key === 'treino'){ applicable = type === 'treino'; pct = applicable ? treinoFrac(dt, d) * 100 : 0; }
+      else if(row.key === 'aguaOk'){ pct = Math.min(100, ((dt.agua_ml||0) / 3500) * 100); }
+      else if(row.key === 'suplementosOk'){ pct = suplementosFrac(dt) * 100; }
+      else if(row.key === 'medicamentos'){ pct = ((dt.fluoxetine?1:0) + (dt.anfetamina?1:0)) / 2 * 100; }
+      else if(row.key === 'tempoChi'){ applicable = [1,3,5].includes(d.getDay()); pct = dt.tempoChi ? 100 : 0; }
+      else { pct = dt[row.key] ? 100 : 0; }
 
       const isToday = fmtKey(d) === todayKey;
       if(!applicable){
         html += `<td><span style="color:var(--ink-faint);font-size:11px;">–</span></td>`;
+      } else if(row.key === 'medicamentos' && !medUnlocked){
+        html += `<td><span style="color:var(--ink-faint);font-size:14px;">🔒</span></td>`;
       } else {
-        html += `<td><div class="dot ${on ? 'on' : ''} ${isToday ? 'today' : ''}"></div></td>`;
+        html += `<td>${ringHTML(pct, isToday)}</td>`;
       }
     });
     html += '</tr>';
@@ -1800,6 +1936,13 @@ async function renderSemana(){
   html += '</tbody></table></div>';
 
   container.innerHTML = html;
+  const medUnlockLink = document.getElementById('semana-med-unlock');
+  if(medUnlockLink){
+    medUnlockLink.addEventListener('click', async () => {
+      const ok = await requestPasswordUnlock();
+      if(ok){ medUnlocked = true; renderSemana(); }
+    });
+  }
 }
 
 /* ---------------- MEDIDAS ---------------- */
