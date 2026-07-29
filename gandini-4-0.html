@@ -181,6 +181,7 @@
   .cal-day.cal-partial{ border-color:var(--amber-dim); color:var(--ink); }
   .cal-day.cal-full{ background:var(--sage-dim); border-color:var(--sage); color:var(--ink); }
   .cal-day.cal-today{ box-shadow: 0 0 0 2px var(--amber); font-weight:700; color:var(--ink); }
+  .cal-day.cal-selected{ background:var(--amber); border-color:var(--amber); color:#1A1508; font-weight:800; }
   #cal-detail{ margin-top:6px; }
 
   .comment-btn{ background:none; border:1px solid var(--border); color:var(--ink-faint); width:22px; height:22px; border-radius:50%;
@@ -313,11 +314,15 @@
           <button class="scope-btn" data-scope="dias">Dias</button>
         </div>
         <div id="dias-picker" style="display:none; margin-bottom:12px;">
+          <div style="font-size:12px; color:var(--ink-dim); margin-bottom:8px;">Toque nos dias no calendário acima pra marcar — ou use o campo abaixo pra adicionar um dia de outro mês:</div>
           <div style="display:flex; gap:8px; margin-bottom:8px;">
             <input type="date" id="dias-picker-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;">
             <button class="btn-secondary" id="dias-picker-add" style="padding:8px 16px;">+</button>
           </div>
           <div id="dias-picker-chips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+        <div id="dias-picker-clear-wrap" style="display:none; margin-bottom:8px;">
+          <span class="link-btn" id="dias-picker-clear-all">limpar toda a seleção</span>
         </div>
         <label class="rep-check"><input type="checkbox" id="rep-refeicoes" checked> <span data-k="repRefeicoes">Refeições (com fotos e comentários)</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-espiritual" checked> <span data-k="repEspiritual">Espiritual</span></label>
@@ -1708,8 +1713,14 @@ async function renderCalendarGrid(){
     if(fmtKey(d) === todayKey) cell.classList.add('cal-today');
     if(pct >= 0.99) cell.classList.add('cal-full');
     else if(pct > 0) cell.classList.add('cal-partial');
+    const dKey = fmtKey(d);
+    if(reportScope === 'dias' && diasPickerDates.includes(dKey)) cell.classList.add('cal-selected');
     cell.innerHTML = `<span>${d.getDate()}</span>`;
-    cell.addEventListener('click', () => renderDayDetail(d));
+    if(reportScope === 'dias'){
+      cell.addEventListener('click', () => toggleDiaSelecionado(dKey));
+    } else {
+      cell.addEventListener('click', () => renderDayDetail(d));
+    }
     grid.appendChild(cell);
   });
 }
@@ -2033,13 +2044,48 @@ function renderBackupStatus(){
 
 let diasPickerDates = [];
 
+function renderDiasChips(){
+  const chipsWrap = document.getElementById('dias-picker-chips');
+  if(!chipsWrap) return;
+  chipsWrap.innerHTML = '';
+  diasPickerDates.sort().forEach(dstr => {
+    const chip = document.createElement('div');
+    chip.className = 'date-chip';
+    const [y,m,d] = dstr.split('-');
+    chip.innerHTML = `<span>${d}/${m}/${y}</span><button data-d="${dstr}">✕</button>`;
+    chip.querySelector('button').addEventListener('click', () => {
+      diasPickerDates = diasPickerDates.filter(x => x !== dstr);
+      renderDiasChips();
+      renderCalendarGrid();
+    });
+    chipsWrap.appendChild(chip);
+  });
+}
+
+function toggleDiaSelecionado(dstr){
+  if(diasPickerDates.includes(dstr)){
+    diasPickerDates = diasPickerDates.filter(x => x !== dstr);
+  } else {
+    diasPickerDates.push(dstr);
+  }
+  renderDiasChips();
+  renderCalendarGrid();
+}
+
 function initReportPanel(){
   document.querySelectorAll('.scope-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       reportScope = btn.dataset.scope;
       document.querySelectorAll('.scope-btn').forEach(b => b.classList.toggle('active', b === btn));
       document.getElementById('dias-picker').style.display = (reportScope === 'dias') ? 'block' : 'none';
+      document.getElementById('dias-picker-clear-wrap').style.display = (reportScope === 'dias') ? 'block' : 'none';
+      renderCalendarGrid();
     });
+  });
+  document.getElementById('dias-picker-clear-all').addEventListener('click', () => {
+    diasPickerDates = [];
+    renderDiasChips();
+    renderCalendarGrid();
   });
   const medCheck = document.getElementById('rep-medicamentos');
   medCheck.addEventListener('change', async () => {
@@ -2052,24 +2098,9 @@ function initReportPanel(){
   const diasInput = document.getElementById('dias-picker-input');
   const diasAddBtn = document.getElementById('dias-picker-add');
   diasInput.value = todayKey;
-  function renderChips(){
-    const chipsWrap = document.getElementById('dias-picker-chips');
-    chipsWrap.innerHTML = '';
-    diasPickerDates.sort().forEach(dstr => {
-      const chip = document.createElement('div');
-      chip.className = 'date-chip';
-      const [y,m,d] = dstr.split('-');
-      chip.innerHTML = `<span>${d}/${m}/${y}</span><button data-d="${dstr}">✕</button>`;
-      chip.querySelector('button').addEventListener('click', () => {
-        diasPickerDates = diasPickerDates.filter(x => x !== dstr);
-        renderChips();
-      });
-      chipsWrap.appendChild(chip);
-    });
-  }
   diasAddBtn.addEventListener('click', () => {
     const val = diasInput.value;
-    if(val && !diasPickerDates.includes(val)){ diasPickerDates.push(val); renderChips(); }
+    if(val && !diasPickerDates.includes(val)){ diasPickerDates.push(val); renderDiasChips(); renderCalendarGrid(); }
   });
 }
 
