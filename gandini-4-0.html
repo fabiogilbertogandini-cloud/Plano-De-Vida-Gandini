@@ -215,6 +215,9 @@
   .scope-btn.active{ background:var(--amber); color:#1A1508; border-color:var(--amber); }
   .rep-check{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim); padding:5px 0; cursor:pointer; }
   .rep-check input{ width:16px; height:16px; accent-color:var(--amber); }
+  .date-chip{ display:flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:20px; padding:5px 10px; font-size:12px; color:var(--ink-dim); }
+  .date-chip button{ background:none; border:none; color:var(--coral); cursor:pointer; font-size:13px; padding:0; line-height:1; }
 
   .water-bucket-wrap{ text-align:center; height:0; overflow:visible; }
   .water-bucket{ display:none; font-size:36px; position:relative; margin:0 auto 8px; width:44px; }
@@ -307,6 +310,14 @@
           <button class="scope-btn" data-scope="dia">Dia</button>
           <button class="scope-btn" data-scope="semana">Semana</button>
           <button class="scope-btn active" data-scope="mes">Mês</button>
+          <button class="scope-btn" data-scope="dias">Dias</button>
+        </div>
+        <div id="dias-picker" style="display:none; margin-bottom:12px;">
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input type="date" id="dias-picker-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;">
+            <button class="btn-secondary" id="dias-picker-add" style="padding:8px 16px;">+</button>
+          </div>
+          <div id="dias-picker-chips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
         </div>
         <label class="rep-check"><input type="checkbox" id="rep-refeicoes" checked> <span data-k="repRefeicoes">Refeições (com fotos e comentários)</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-espiritual" checked> <span data-k="repEspiritual">Espiritual</span></label>
@@ -1244,10 +1255,12 @@ function renderStaticText(){
   document.getElementById('hist-title').textContent = t.histTitle;
 }
 
-function renderDateHeader(){
+function renderDateHeader(dateObj, dayType){
+  dateObj = dateObj || today;
+  dayType = dayType || (dateObj === today ? todayType : getDayType(dateObj));
   const t = T[currentLang];
-  document.getElementById('date-label').textContent = `${DIAS[currentLang][today.getDay()]}, ${today.getDate()} ${MESES[currentLang][today.getMonth()]}`;
-  document.getElementById('daytype-title').textContent = t.dayType[todayType];
+  document.getElementById('date-label').textContent = `${DIAS[currentLang][dateObj.getDay()]}, ${dateObj.getDate()} ${MESES[currentLang][dateObj.getMonth()]}`;
+  document.getElementById('daytype-title').textContent = t.dayType[dayType];
 }
 
 /* ---------------- RENDER HOJE ---------------- */
@@ -1604,15 +1617,17 @@ function adjustWater(delta){
 }
 
 
-function updateArc(){
-  const sections = buildSections(today, currentLang);
+function updateArc(){ updateArcFor(today, dayData); }
+
+function updateArcFor(dateObj, data){
+  const sections = buildSections(dateObj, currentLang);
   let total = 0, done = 0;
   sections.forEach(sec => {
     if(sec.isWater){
       total += 1;
-      if((dayData.agua_ml||0) >= 3500) done += 1;
+      if((data.agua_ml||0) >= 3500) done += 1;
     } else {
-      sec.tasks.forEach(tk => { total += 1; if(getChecked(tk.id)) done += 1; });
+      sec.tasks.forEach(tk => { total += 1; if(!!data[tk.id]) done += 1; });
     }
   });
   const pct = total ? Math.round((done/total)*100) : 0;
@@ -1635,6 +1650,7 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(tb => tb.classList.toggle('active', tb.dataset.tab === name));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
+  if(name !== 'calendario'){ renderDateHeader(today, todayType); updateArc(); }
   if(name === 'hoje') refreshGCalViews();
   if(name === 'semana') renderSemana();
   if(name === 'calendario') { renderCalendarGrid(); renderDayDetail(today); }
@@ -1702,6 +1718,8 @@ async function renderDayDetail(dateObj){
   calSelectedDate = dateObj;
   const key = fmtKey(dateObj);
   const data = await getDay(key);
+  renderDateHeader(dateObj, getDayType(dateObj));
+  updateArcFor(dateObj, data);
   const sections = buildSections(dateObj, currentLang);
   const container = document.getElementById('cal-detail');
   container.innerHTML = '';
@@ -2013,11 +2031,14 @@ function renderBackupStatus(){
   }
 }
 
+let diasPickerDates = [];
+
 function initReportPanel(){
   document.querySelectorAll('.scope-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       reportScope = btn.dataset.scope;
       document.querySelectorAll('.scope-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('dias-picker').style.display = (reportScope === 'dias') ? 'block' : 'none';
     });
   });
   const medCheck = document.getElementById('rep-medicamentos');
@@ -2026,6 +2047,29 @@ function initReportPanel(){
       const ok = await requestPasswordUnlock();
       if(ok){ medUnlocked = true; } else { medCheck.checked = false; }
     }
+  });
+
+  const diasInput = document.getElementById('dias-picker-input');
+  const diasAddBtn = document.getElementById('dias-picker-add');
+  diasInput.value = todayKey;
+  function renderChips(){
+    const chipsWrap = document.getElementById('dias-picker-chips');
+    chipsWrap.innerHTML = '';
+    diasPickerDates.sort().forEach(dstr => {
+      const chip = document.createElement('div');
+      chip.className = 'date-chip';
+      const [y,m,d] = dstr.split('-');
+      chip.innerHTML = `<span>${d}/${m}/${y}</span><button data-d="${dstr}">✕</button>`;
+      chip.querySelector('button').addEventListener('click', () => {
+        diasPickerDates = diasPickerDates.filter(x => x !== dstr);
+        renderChips();
+      });
+      chipsWrap.appendChild(chip);
+    });
+  }
+  diasAddBtn.addEventListener('click', () => {
+    const val = diasInput.value;
+    if(val && !diasPickerDates.includes(val)){ diasPickerDates.push(val); renderChips(); }
   });
 }
 
@@ -2059,6 +2103,10 @@ async function gerarRelatorio(){
       const monday = startOfWeek(calSelectedDate);
       for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
       titlePeriod = `Semana de ${monday.getDate()}/${monday.getMonth()+1}`;
+    } else if(reportScope === 'dias'){
+      if(diasPickerDates.length === 0){ alert('Adiciona pelo menos um dia na lista antes de gerar.'); return; }
+      dates = diasPickerDates.map(dstr => { const [y,m,d] = dstr.split('-').map(Number); return new Date(y, m-1, d); });
+      titlePeriod = `${dates.length} dias selecionados`;
     } else {
       const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
       for(let d=1; d<=daysInMonth; d++){ dates.push(new Date(calMonth.getFullYear(), calMonth.getMonth(), d)); }
