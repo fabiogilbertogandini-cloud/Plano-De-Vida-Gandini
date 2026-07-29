@@ -2115,6 +2115,10 @@ const MEAL_LABELS = {
 
 async function gerarRelatorio(){
   try{
+    if(!window.jspdf || !window.jspdf.jsPDF){
+      alert('A biblioteca de PDF ainda não carregou. Espera alguns segundos e tenta de novo (ou dá um hard refresh na página).');
+      return;
+    }
     const incl = {
       refeicoes: document.getElementById('rep-refeicoes').checked,
       espiritual: document.getElementById('rep-espiritual').checked,
