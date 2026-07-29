@@ -2010,7 +2010,7 @@ function exportBackup(){
     const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `gandini-backup-${todayKey}.json`;
+    a.href = url; a.download = `gandini-backup-${todayKey}-${Date.now()}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     localStorage.setItem('gandini-last-backup', todayKey);
@@ -2237,7 +2237,7 @@ async function gerarRelatorio(){
       doc.setTextColor(0,0,0);
     }
 
-    doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}.pdf`);
+    doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.pdf`);
   }catch(e){ console.error('relatorio error', e); alert('Erro ao gerar relatório.'); }
 }
 
