@@ -1007,11 +1007,6 @@ function buildSections(date, lang){
     sections.push({ id:'espiritual', time:'6h05', title:t.sec.espiritual, tasks:[
       {id:'oracao', label:t.task.oracaoSimples, note: prayerNote},
     ]});
-    if(wd === 2){
-      sections.push({ id:'pesagem', time:'', title:t.sec.pesagem, tasks:[
-        {id:'pesagem', label:t.task.pesagem},
-      ]});
-    }
   } else if(type === 'sabado'){
     sections.push({ id:'wake', time:'6h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar6}] });
     sections.push({ id:'espiritual', time:'', title:t.sec.espiritual, tasks:[
@@ -1031,6 +1026,12 @@ function buildSections(date, lang){
     sections.push({ id:'estudo', time:'13h', title:t.sec.estudo, tasks:[
       {id:'revego', label:t.task.revego},
     ], note: wd === 5 ? t.task.revegoNote : null });
+  }
+
+  if(wd === 5){
+    sections.push({ id:'pesagem', time:'', title:t.sec.pesagem, tasks:[
+      {id:'pesagem', label:t.task.pesagem},
+    ]});
   }
 
   const refeicaoTasks = [
