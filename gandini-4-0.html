@@ -2173,7 +2173,18 @@ async function gerarRelatorio(){
       }
       if(incl.treino && type === 'treino'){
         ensureSpace(6);
-        doc.text(`Treino: ${rec.treino ? '[X]' : '[ ]'}`, 24, y); y += 5;
+        const wd = dt.getDay ? dt.getDay() : new Date(dt).getDay();
+        const letraDia = TREINO_LETRA[wd];
+        const exs = WORKOUTS[letraDia] || [];
+        doc.setFont('helvetica','bold'); doc.text(`Treino ${letraDia}:`, 24, y); y += 5.5; doc.setFont('helvetica','normal');
+        exs.forEach(ex => {
+          const exId = `tr_${ex.id}`;
+          const exDone = rec[exId];
+          const exComment = rec[`c_${exId}`];
+          ensureSpace(6);
+          doc.text(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exComment ? ' — ' + exComment : ''}`, 26, y);
+          y += 5;
+        });
       }
       if(incl.agua){
         ensureSpace(6);
