@@ -86,6 +86,11 @@
   .section-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; }
   .section-head .st{ display:flex; align-items:center; gap:10px; }
   .section-head .time{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber); background:rgba(214,167,90,0.1); padding:3px 8px; border-radius:6px; }
+  .time-edit-wrap{ display:flex; align-items:center; gap:6px; }
+  .time-pencil{ background:none; border:none; font-size:12px; cursor:pointer; padding:2px; opacity:0.7; }
+  .time-edit-wrap input[type="time"]{ background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:6px; padding:3px 6px; font-size:12px; }
+  .time-save-btn, .time-reset-btn{ background:var(--amber); border:none; color:#1A1508; font-weight:700; border-radius:6px; padding:3px 8px; font-size:12px; cursor:pointer; }
+  .time-reset-btn{ background:var(--surface-2); color:var(--ink-faint); }
   .section-title{ font-size:15px; font-weight:600; font-family:'Inter',sans-serif; }
   .section-body{ padding: 0 16px 14px; }
 
@@ -311,7 +316,7 @@
           <button class="scope-btn" data-scope="dia">Dia</button>
           <button class="scope-btn" data-scope="semana">Semana</button>
           <button class="scope-btn active" data-scope="mes">Mês</button>
-          <button class="scope-btn" data-scope="dias">Dias</button>
+          <button class="scope-btn" data-scope="dias">Selecionar</button>
         </div>
         <div id="dias-picker" style="display:none; margin-bottom:12px;">
           <div style="font-size:12px; color:var(--ink-dim); margin-bottom:8px;">Toque nos dias no calendário acima pra marcar — ou use o campo abaixo pra adicionar um dia de outro mês:</div>
@@ -818,6 +823,11 @@ const LAUNCH_DATE = new Date(2026, 6, 27); // Gandini 4.0 official launch — Ju
 /* ---------------- TASK DEFINITIONS ---------------- */
 const TREINO_LETRA = { 1:'A', 3:'B', 5:'C' };
 
+const TREINO_GROUP = {
+  A: { pt:'Pernas, Peito, Ombro', en:'Legs, Chest, Shoulders', ja:'脚・胸・肩' },
+  B: { pt:'Costas, Ombro, Tríceps', en:'Back, Shoulders, Triceps', ja:'背中・肩・三頭筋' },
+  C: { pt:'Pernas, Costas, Bíceps', en:'Legs, Back, Biceps', ja:'脚・背中・二頭筋' },
+};
 const WORKOUTS = {
   A: [
     { id:'warmup', pt:'Aquecimento — Esteira, inclinação 5%, 2.5–3.0 MPH (10min)', en:'Warm-up — Treadmill, 5% incline, 2.5–3.0 MPH (10min)', ja:'ウォームアップ — トレッドミル、傾斜5%、2.5–3.0 MPH（10分）' },
@@ -1016,7 +1026,7 @@ function buildSections(date, lang){
       label: exLabel(ex, lang),
       note: exNote(ex, lang),
     }));
-    sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra}`, tasks: exList,
+    sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra} (${TREINO_GROUP[letra][lang]})`, tasks: exList,
       groupIds: exList.map(e => e.id) });
   } else if(type === 'descanso'){
     sections.push({ id:'wake', time:'6h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar6}] });
@@ -1279,10 +1289,9 @@ async function renderHoje(){
   sections.forEach(sec => {
     const box = document.createElement('div');
     box.className = 'section';
-    let headHTML = `<div class="section-head"><div class="st"><span class="section-title">${sec.title}</span></div>`;
-    if(sec.time) headHTML += `<span class="time">${sec.time}</span>`;
-    headHTML += `</div>`;
+    let headHTML = `<div class="section-head"><div class="st"><span class="section-title">${sec.title}</span></div></div>`;
     box.innerHTML = headHTML;
+    attachTimeEditor(box.querySelector('.section-head'), sec, dayData, todayKey, renderHoje);
 
     const body = document.createElement('div');
     body.className = 'section-body';
@@ -1306,6 +1315,10 @@ async function renderHoje(){
       body.appendChild(renderWater());
     } else {
       sec.tasks.forEach(tk => body.appendChild(renderTaskRow(tk, sec.groupIds)));
+    }
+
+    if(sec.id === 'treino'){
+      body.appendChild(renderReposicaoControl(dayData, todayKey, renderHoje));
     }
 
     if(sec.id === 'medicamentos' && medUnlocked){
@@ -1462,6 +1475,109 @@ function setChecked(taskId, val){
   renderSemanaIfActive();
 }
 
+function attachTimeEditor(headEl, sec, dataObj, dateKey, rerenderFn){
+  if(!sec.time) return;
+  const hourKey = `hora_${sec.id}`;
+  const wrap = document.createElement('div');
+  wrap.className = 'time-edit-wrap';
+  const display = document.createElement('span');
+  display.className = 'time';
+  display.textContent = dataObj[hourKey] || sec.time;
+  const pencil = document.createElement('button');
+  pencil.className = 'time-pencil';
+  pencil.type = 'button';
+  pencil.textContent = '✏️';
+  wrap.appendChild(display);
+  wrap.appendChild(pencil);
+  headEl.appendChild(wrap);
+
+  pencil.addEventListener('click', () => {
+    wrap.innerHTML = '';
+    const input = document.createElement('input');
+    input.type = 'time';
+    const current = dataObj[hourKey];
+    if(current && /^\d{2}:\d{2}$/.test(current)){ input.value = current; }
+    else {
+      const m = String(sec.time).match(/(\d{1,2})h(\d{0,2})/);
+      if(m) input.value = `${m[1].padStart(2,'0')}:${(m[2]||'00').padStart(2,'0')}`;
+    }
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'time-save-btn';
+    saveBtn.type = 'button';
+    saveBtn.textContent = '✓';
+    wrap.appendChild(input);
+    wrap.appendChild(saveBtn);
+    if(dataObj[hourKey]){
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'time-reset-btn';
+      resetBtn.type = 'button';
+      resetBtn.textContent = '↺';
+      wrap.appendChild(resetBtn);
+      resetBtn.addEventListener('click', async () => {
+        delete dataObj[hourKey];
+        await setDay(dateKey, dataObj);
+        rerenderFn();
+      });
+    }
+    input.focus();
+    saveBtn.addEventListener('click', async () => {
+      if(input.value){ dataObj[hourKey] = input.value; await setDay(dateKey, dataObj); rerenderFn(); }
+    });
+  });
+}
+
+async function marcarReposicao(currentKey, missedKeyStr){
+  const current = await getDay(currentKey);
+  current.reposicao_de = missedKeyStr;
+  await setDay(currentKey, current);
+  const missed = await getDay(missedKeyStr);
+  missed.reposto_em = currentKey;
+  await setDay(missedKeyStr, missed);
+}
+async function desfazerReposicao(currentKey){
+  const current = await getDay(currentKey);
+  const missedKeyStr = current.reposicao_de;
+  delete current.reposicao_de;
+  await setDay(currentKey, current);
+  if(missedKeyStr){
+    const missed = await getDay(missedKeyStr);
+    delete missed.reposto_em;
+    await setDay(missedKeyStr, missed);
+  }
+}
+function fmtKeyDisplay(k){
+  const [y,m,d] = k.split('-');
+  return `${d}/${m}`;
+}
+function renderReposicaoControl(dataObj, dateKey, rerenderFn){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);';
+  if(dataObj.reposto_em){
+    wrap.innerHTML = `<div style="font-size:12px; color:var(--ink-dim);">⚠ Não treinado — porém, reposto no dia <b>${fmtKeyDisplay(dataObj.reposto_em)}</b></div>`;
+  } else if(dataObj.reposicao_de){
+    wrap.innerHTML = `<div style="font-size:12px; color:var(--sage);">🔁 Reposição do treino do dia <b>${fmtKeyDisplay(dataObj.reposicao_de)}</b> — <span class="link-btn" id="desfazer-repo">desfazer</span></div>`;
+    wrap.querySelector('#desfazer-repo').addEventListener('click', async () => {
+      await desfazerReposicao(dateKey);
+      rerenderFn();
+    });
+  } else {
+    wrap.innerHTML = `<span class="link-btn" id="marcar-repo">🔁 Esse treino é reposição de um dia perdido</span>`;
+    wrap.querySelector('#marcar-repo').addEventListener('click', () => {
+      wrap.innerHTML = `<div style="display:flex; gap:8px; align-items:center;">
+        <input type="date" id="repo-date-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;" max="${dateKey}">
+        <button class="btn-secondary" id="repo-confirm" style="padding:8px 16px;">Confirmar</button>
+      </div>`;
+      wrap.querySelector('#repo-confirm').addEventListener('click', async () => {
+        const val = wrap.querySelector('#repo-date-input').value;
+        if(!val) return;
+        await marcarReposicao(dateKey, val);
+        rerenderFn();
+      });
+    });
+  }
+  return wrap;
+}
+
 function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBtn, onSaved){
   const t = T[currentLang];
   const commentKey = `c_${taskId}`;
@@ -1562,7 +1678,7 @@ function renderTaskRow(task, groupIds){
     updateArc();
     renderSemanaIfActive();
     if(groupIds){
-      dayData.treino = groupIds.every(id => !!dayData[id]);
+      dayData.treino = groupIds.some(id => !!dayData[id]);
       setDay(todayKey, dayData);
     }
   });
@@ -1631,6 +1747,9 @@ function updateArcFor(dateObj, data){
     if(sec.isWater){
       total += 1;
       if((data.agua_ml||0) >= 3500) done += 1;
+    } else if(sec.groupIds){
+      total += 1;
+      if(sec.groupIds.some(id => !!data[id])) done += 1;
     } else {
       sec.tasks.forEach(tk => { total += 1; if(!!data[tk.id]) done += 1; });
     }
@@ -1705,6 +1824,7 @@ async function renderCalendarGrid(){
     let total = 0, done = 0;
     sections.forEach(sec => {
       if(sec.isWater){ total += 1; if((dt.agua_ml||0) >= 3500) done += 1; }
+      else if(sec.groupIds){ total += 1; if(sec.groupIds.some(id => !!dt[id])) done += 1; }
       else sec.tasks.forEach(tk => { total += 1; if(dt[tk.id]) done += 1; });
     });
     const pct = total ? done/total : 0;
@@ -1750,10 +1870,9 @@ async function renderDayDetail(dateObj){
   sections.forEach(sec => {
     const box = document.createElement('div');
     box.className = 'section';
-    let headHTML = `<div class="section-head"><div class="st"><span class="section-title">${sec.title}</span></div>`;
-    if(sec.time) headHTML += `<span class="time">${sec.time}</span>`;
-    headHTML += `</div>`;
+    let headHTML = `<div class="section-head"><div class="st"><span class="section-title">${sec.title}</span></div></div>`;
     box.innerHTML = headHTML;
+    attachTimeEditor(box.querySelector('.section-head'), sec, data, key, () => renderDayDetail(dateObj));
     const body = document.createElement('div');
     body.className = 'section-body';
 
@@ -1820,7 +1939,7 @@ async function renderDayDetail(dateObj){
         row.querySelector('.check').addEventListener('click', async () => {
           data[tk.id] = !data[tk.id];
           if(sec.groupIds){
-            data.treino = sec.groupIds.every(id => !!data[id]);
+            data.treino = sec.groupIds.some(id => !!data[id]);
           }
           await setDay(key, data);
           if(key === todayKey){ dayData = data; updateArc(); renderSemanaIfActive(); }
@@ -1841,6 +1960,9 @@ async function renderDayDetail(dateObj){
         hideBtn.textContent = '🔒 Esconder de novo';
         hideBtn.addEventListener('click', () => { medUnlocked = false; renderDayDetail(dateObj); });
         body.appendChild(hideBtn);
+      }
+      if(sec.id === 'treino'){
+        body.appendChild(renderReposicaoControl(data, key, () => renderDayDetail(dateObj)));
       }
     }
     if(sec.note){
@@ -2166,6 +2288,16 @@ async function gerarRelatorio(){
       y += 6;
       doc.setFont('helvetica','normal'); doc.setFontSize(9);
 
+      const daySections = buildSections(dt, 'pt');
+      const customTimes = daySections.filter(s => rec[`hora_${s.id}`]).map(s => `${s.title.replace(/\(.*\)/,'').trim()}: ${rec[`hora_${s.id}`]}`);
+      if(customTimes.length){
+        ensureSpace(6);
+        doc.setFont('helvetica','italic');
+        doc.text(`Horários registrados — ${customTimes.join('  |  ')}`, 24, y);
+        doc.setFont('helvetica','normal');
+        y += 5.5;
+      }
+
       if(incl.espiritual){
         ensureSpace(6);
         doc.text(`Oração: ${rec.oracao ? '[X]' : '[ ]'}`, 24, y); y += 5;
@@ -2176,7 +2308,7 @@ async function gerarRelatorio(){
         const wd = dt.getDay ? dt.getDay() : new Date(dt).getDay();
         const letraDia = TREINO_LETRA[wd];
         const exs = WORKOUTS[letraDia] || [];
-        doc.setFont('helvetica','bold'); doc.text(`Treino ${letraDia}:`, 24, y); y += 5.5; doc.setFont('helvetica','normal');
+        doc.setFont('helvetica','bold'); doc.text(`Treino ${letraDia} (${TREINO_GROUP[letraDia].pt}):`, 24, y); y += 5.5; doc.setFont('helvetica','normal');
         exs.forEach(ex => {
           const exId = `tr_${ex.id}`;
           const exDone = rec[exId];
@@ -2185,6 +2317,20 @@ async function gerarRelatorio(){
           doc.text(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exComment ? ' — ' + exComment : ''}`, 26, y);
           y += 5;
         });
+        if(rec.reposto_em){
+          ensureSpace(6);
+          doc.setFont('helvetica','italic');
+          doc.text(`⚠ Não treinado — porém, reposto no dia ${fmtKeyDisplay(rec.reposto_em)}`, 26, y);
+          doc.setFont('helvetica','normal');
+          y += 5;
+        }
+        if(rec.reposicao_de){
+          ensureSpace(6);
+          doc.setFont('helvetica','italic');
+          doc.text(`🔁 Reposição do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}`, 26, y);
+          doc.setFont('helvetica','normal');
+          y += 5;
+        }
       }
       if(incl.agua){
         ensureSpace(6);
