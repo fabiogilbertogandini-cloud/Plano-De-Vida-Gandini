@@ -199,8 +199,10 @@
   .photo-row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
   .photo-btn{ background:var(--surface-2); border:1px solid var(--border); color:var(--ink-dim); border-radius:8px;
     padding:7px 12px; font-size:12px; cursor:pointer; }
-  .photo-preview{ max-width:60px; max-height:60px; border-radius:6px; border:1px solid var(--border); object-fit:cover; }
-  .photo-remove{ background:none; border:none; color:var(--coral); font-size:12px; cursor:pointer; text-decoration:underline; }
+  .photo-thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .photo-thumb{ position:relative; width:60px; height:60px; }
+  .photo-thumb img{ width:60px; height:60px; border-radius:6px; border:1px solid var(--border); object-fit:cover; }
+  .photo-thumb button{ position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:var(--coral); border:none; color:#fff; font-size:11px; line-height:1; cursor:pointer; }
   .comment-save-btn{ background:var(--amber); color:#1A1508; border:none; border-radius:8px; padding:6px 14px;
     font-size:12px; font-weight:700; cursor:pointer; margin-top:8px; }
   .comment-saved-msg{ font-size:11px; color:var(--sage); margin-left:8px; }
@@ -831,41 +833,42 @@ const TREINO_GROUP = {
 const WORKOUTS = {
   A: [
     { id:'warmup', pt:'Aquecimento — Esteira, inclinação 5%, 2.5–3.0 MPH (10min)', en:'Warm-up — Treadmill, 5% incline, 2.5–3.0 MPH (10min)', ja:'ウォームアップ — トレッドミル、傾斜5%、2.5–3.0 MPH（10分）' },
-    { id:'ex1', pt:'Agachamento com halter (goblet) — 4x10', en:'Goblet Squat — 4x10', ja:'ゴブレットスクワット — 4x10' },
-    { id:'ex2', pt:'Supino reto com halteres — 4x10', en:'Dumbbell Bench Press — 4x10', ja:'ダンベルベンチプレス — 4x10' },
-    { id:'ex3', pt:'Remada sentada (pulley) — 3x12', en:'Seated Cable Row — 3x12', ja:'シーテッドケーブルロー — 3x12' },
-    { id:'ex4', pt:'Desenvolvimento de ombro com halteres — 3x10', en:'Dumbbell Shoulder Press — 3x10', ja:'ダンベルショルダープレス — 3x10' },
-    { id:'ex5', pt:'Afundo alternado — 3x10 (cada perna)', en:'Walking Lunges — 3x10 (each leg)', ja:'ウォーキングランジ — 各脚3x10' },
-    { id:'ex6', pt:'Prancha — 3x40s', en:'Plank — 3x40s', ja:'プランク — 3x40秒' },
-    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15' },
+    { id:'ex1', pt:'Agachamento com halter (goblet) — 4x10', en:'Goblet Squat — 4x10', ja:'ゴブレットスクワット — 4x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
+    { id:'ex2', pt:'Supino reto com halteres — 4x10', en:'Dumbbell Bench Press — 4x10', ja:'ダンベルベンチプレス — 4x10', grupoPt:'Peito', grupoEn:'Chest', grupoJa:'胸' },
+    { id:'ex3', pt:'Remada sentada (pulley) — 3x12', en:'Seated Cable Row — 3x12', ja:'シーテッドケーブルロー — 3x12', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中' },
+    { id:'ex4', pt:'Desenvolvimento de ombro com halteres — 3x10', en:'Dumbbell Shoulder Press — 3x10', ja:'ダンベルショルダープレス — 3x10', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩' },
+    { id:'ex5', pt:'Afundo alternado — 3x10 (cada perna)', en:'Walking Lunges — 3x10 (each leg)', ja:'ウォーキングランジ — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
+    { id:'ex6', pt:'Prancha — 3x40s', en:'Plank — 3x40s', ja:'プランク — 3x40秒', grupoPt:'Abdômen (Core)', grupoEn:'Core', grupoJa:'体幹' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
     { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
   ],
   B: [
     { id:'warmup', pt:'Aquecimento — Bike (10min)', en:'Warm-up — Bike (10min)', ja:'ウォームアップ — バイク（10分）' },
-    { id:'ex1', pt:'Levantamento terra romeno com halteres — 4x10', en:'Romanian Deadlift — 4x10', ja:'ルーマニアンデッドリフト — 4x10' },
-    { id:'ex2', pt:'Puxada alta (pulley) — 4x12', en:'Lat Pulldown — 4x12', ja:'ラットプルダウン — 4x12' },
-    { id:'ex3', pt:'Fly inclinado (pulley) — 3x12', en:'Incline Cable Fly — 3x12', ja:'インクラインケーブルフライ — 3x12' },
-    { id:'ex4', pt:'Elevação lateral com halteres — 3x12', en:'Lateral Raise — 3x12', ja:'サイドレイズ — 3x12' },
-    { id:'ex5', pt:'Tríceps pulley barra reta — 3x12', en:'Triceps Pushdown (straight bar) — 3x12', ja:'トライセプスプッシュダウン（ストレートバー）— 3x12',
+    { id:'ex1', pt:'Levantamento terra romeno com halteres — 4x10', en:'Romanian Deadlift — 4x10', ja:'ルーマニアンデッドリフト — 4x10', grupoPt:'Posterior de coxa/Glúteos', grupoEn:'Hamstrings/Glutes', grupoJa:'もも裏・臀筋' },
+    { id:'ex2', pt:'Puxada alta (pulley) — 4x12', en:'Lat Pulldown — 4x12', ja:'ラットプルダウン — 4x12', grupoPt:'Costas (Dorsais/Latíssimo)', grupoEn:'Back (Lats)', grupoJa:'背中（広背筋）' },
+    { id:'ex3', pt:'Fly inclinado (pulley) — 3x12', en:'Incline Cable Fly — 3x12', ja:'インクラインケーブルフライ — 3x12', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）' },
+    { id:'ex4', pt:'Elevação lateral com halteres — 3x12', en:'Lateral Raise — 3x12', ja:'サイドレイズ — 3x12', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩' },
+    { id:'ex5', pt:'Tríceps pulley barra reta — 3x12', en:'Triceps Pushdown (straight bar) — 3x12', ja:'トライセプスプッシュダウン（ストレートバー）— 3x12', grupoPt:'Tríceps', grupoEn:'Triceps', grupoJa:'三頭筋',
       notePt:'Evitar corda — cotovelo esquerdo.', noteEn:'Avoid the rope attachment — left elbow.', noteJa:'ロープアタッチメントは避ける — 左肘のため。' },
-    { id:'ex6', pt:'Elevação de joelhos suspenso — 3x12', en:'Hanging Knee Raise — 3x12', ja:'ハンギングニーレイズ — 3x12' },
-    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15' },
+    { id:'ex6', pt:'Elevação de joelhos suspenso — 3x12', en:'Hanging Knee Raise — 3x12', ja:'ハンギングニーレイズ — 3x12', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
     { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
   ],
   C: [
     { id:'warmup', pt:'Aquecimento — Esteira em intervalo', en:'Warm-up — Treadmill intervals', ja:'ウォームアップ — トレッドミルインターバル' },
-    { id:'ex1', pt:'Agachamento búlgaro — 3x10 (cada perna)', en:'Bulgarian Split Squat — 3x10 (each leg)', ja:'ブルガリアンスクワット — 各脚3x10' },
-    { id:'ex2', pt:'Remada curvada com halteres — 4x10', en:'Bent-Over Dumbbell Row — 4x10', ja:'ベントオーバーロー — 4x10' },
-    { id:'ex3', pt:'Supino inclinado com halteres — 3x10', en:'Incline Dumbbell Press — 3x10', ja:'インクラインダンベルプレス — 3x10' },
-    { id:'ex4', pt:'Panturrilha em pé — 4x15', en:'Standing Calf Raise — 4x15', ja:'スタンディングカーフレイズ — 4x15' },
-    { id:'ex5', pt:'Rosca direta com halteres (leve) — 3x12', en:'Dumbbell Bicep Curl (light) — 3x12', ja:'ダンベルバイセップカール（軽め）— 3x12',
+    { id:'ex1', pt:'Agachamento búlgaro — 3x10 (cada perna)', en:'Bulgarian Split Squat — 3x10 (each leg)', ja:'ブルガリアンスクワット — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
+    { id:'ex2', pt:'Remada curvada com halteres — 4x10', en:'Bent-Over Dumbbell Row — 4x10', ja:'ベントオーバーロー — 4x10', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中' },
+    { id:'ex3', pt:'Supino inclinado com halteres — 3x10', en:'Incline Dumbbell Press — 3x10', ja:'インクラインダンベルプレス — 3x10', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）' },
+    { id:'ex4', pt:'Panturrilha em pé — 4x15', en:'Standing Calf Raise — 4x15', ja:'スタンディングカーフレイズ — 4x15', grupoPt:'Panturrilha', grupoEn:'Calves', grupoJa:'ふくらはぎ' },
+    { id:'ex5', pt:'Rosca direta com halteres (leve) — 3x12', en:'Dumbbell Bicep Curl (light) — 3x12', ja:'ダンベルバイセップカール（軽め）— 3x12', grupoPt:'Bíceps', grupoEn:'Biceps', grupoJa:'二頭筋',
       notePt:'Poupar cotovelo esquerdo.', noteEn:'Go easy on the left elbow.', noteJa:'左肘に負担をかけないように。' },
-    { id:'ex6', pt:'Prancha lateral — 3x30s (cada lado)', en:'Side Plank — 3x30s (each side)', ja:'サイドプランク — 各側3x30秒' },
+    { id:'ex6', pt:'Prancha lateral — 3x30s (cada lado)', en:'Side Plank — 3x30s (each side)', ja:'サイドプランク — 各側3x30秒', grupoPt:'Abdômen (Oblíquos)', grupoEn:'Core (Obliques)', grupoJa:'体幹（脇腹）' },
     { id:'cooldown', pt:'Esteira em intervalo (10min) — 2min moderado / 1min forte', en:'Treadmill intervals (10min) — 2min moderate / 1min hard', ja:'トレッドミルインターバル（10分）— 中強度2分／高強度1分' },
   ],
 };
 function exLabel(ex, lang){ return lang === 'pt' ? ex.pt : lang === 'en' ? ex.en : ex.ja; }
 function exNote(ex, lang){ if(!ex.notePt) return null; return lang === 'pt' ? ex.notePt : lang === 'en' ? ex.noteEn : ex.noteJa; }
+function exGroup(ex, lang){ if(!ex.grupoPt) return null; return lang === 'pt' ? ex.grupoPt : lang === 'en' ? ex.grupoEn : ex.grupoJa; }
 
 /* Weekly Prayer Journal — keyed by JS getDay() (0=Sunday..6=Saturday) */
 const WEEKLY_PRAYER = {
@@ -1023,7 +1026,7 @@ function buildSections(date, lang){
     const letra = TREINO_LETRA[wd];
     const exList = WORKOUTS[letra].map(ex => ({
       id: `tr_${ex.id}`,
-      label: exLabel(ex, lang),
+      label: exLabel(ex, lang) + (exGroup(ex, lang) ? ` [${exGroup(ex, lang)}]` : ''),
       note: exNote(ex, lang),
     }));
     sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra} (${TREINO_GROUP[letra][lang]})`, tasks: exList,
@@ -1578,6 +1581,12 @@ function renderReposicaoControl(dataObj, dateKey, rerenderFn){
   return wrap;
 }
 
+function getPhotosArr(dataObj, photoKey){
+  const v = dataObj[photoKey];
+  if(!v) return [];
+  return Array.isArray(v) ? v.slice() : [v];
+}
+
 function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBtn, onSaved){
   const t = T[currentLang];
   const commentKey = `c_${taskId}`;
@@ -1588,44 +1597,52 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   if(isMeal){
     boxHtml += `
       <div class="photo-row">
-        <input type="file" accept="image/*" class="photo-input" style="display:none">
-        <button class="photo-btn" type="button">📷 ${t.photoBtn}</button>
-        <img class="photo-preview" style="${dataObj[photoKey] ? '' : 'display:none;'}" src="${dataObj[photoKey] || ''}">
-        <button class="photo-remove" type="button" style="${dataObj[photoKey] ? '' : 'display:none;'}">${t.removePhoto}</button>
-      </div>`;
+        <input type="file" accept="image/*" capture="environment" class="photo-input-camera" style="display:none">
+        <input type="file" accept="image/*" multiple class="photo-input-gallery" style="display:none">
+        <button class="photo-btn" type="button" data-src="camera">📷 Câmera</button>
+        <button class="photo-btn" type="button" data-src="gallery">🖼️ Galeria</button>
+      </div>
+      <div class="photo-thumbs"></div>`;
   }
   boxHtml += `<button class="comment-save-btn" type="button">${t.btnSave}</button><span class="comment-saved-msg"></span>`;
   box.innerHTML = boxHtml;
   container.appendChild(box);
 
-  let pendingPhoto = dataObj[photoKey] || null;
-  let photoRemoved = false;
+  let pendingPhotos = getPhotosArr(dataObj, photoKey);
+
+  function renderThumbs(){
+    const thumbsWrap = box.querySelector('.photo-thumbs');
+    if(!thumbsWrap) return;
+    thumbsWrap.innerHTML = '';
+    pendingPhotos.forEach((src, i) => {
+      const t = document.createElement('div');
+      t.className = 'photo-thumb';
+      t.innerHTML = `<img src="${src}"><button type="button" data-i="${i}">✕</button>`;
+      t.querySelector('button').addEventListener('click', () => {
+        pendingPhotos.splice(i, 1);
+        renderThumbs();
+      });
+      thumbsWrap.appendChild(t);
+    });
+  }
 
   if(isMeal){
-    const fileInput = box.querySelector('.photo-input');
-    const photoBtn = box.querySelector('.photo-btn');
-    const preview = box.querySelector('.photo-preview');
-    const removeBtn = box.querySelector('.photo-remove');
-    photoBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async () => {
-      const file = fileInput.files[0];
-      if(!file) return;
-      try{
-        const dataUrl = await compressImage(file, 500, 0.55);
-        pendingPhoto = dataUrl;
-        photoRemoved = false;
-        preview.src = dataUrl;
-        preview.style.display = '';
-        removeBtn.style.display = '';
-      }catch(e){ console.error('photo compress error', e); }
-    });
-    removeBtn.addEventListener('click', () => {
-      pendingPhoto = null;
-      photoRemoved = true;
-      preview.style.display = 'none';
-      removeBtn.style.display = 'none';
-      fileInput.value = '';
-    });
+    renderThumbs();
+    const camInput = box.querySelector('.photo-input-camera');
+    const galInput = box.querySelector('.photo-input-gallery');
+    box.querySelector('[data-src="camera"]').addEventListener('click', () => camInput.click());
+    box.querySelector('[data-src="gallery"]').addEventListener('click', () => galInput.click());
+    async function handleFiles(fileList){
+      for(const file of Array.from(fileList)){
+        try{
+          const dataUrl = await compressImage(file, 500, 0.55);
+          pendingPhotos.push(dataUrl);
+        }catch(e){ console.error('photo compress error', e); }
+      }
+      renderThumbs();
+    }
+    camInput.addEventListener('change', () => { handleFiles(camInput.files); camInput.value = ''; });
+    galInput.addEventListener('change', () => { handleFiles(galInput.files); galInput.value = ''; });
   }
 
   const saveBtn = box.querySelector('.comment-save-btn');
@@ -1634,8 +1651,8 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   saveBtn.addEventListener('click', async () => {
     dataObj[commentKey] = textarea.value;
     if(isMeal){
-      if(photoRemoved){ delete dataObj[photoKey]; }
-      else if(pendingPhoto){ dataObj[photoKey] = pendingPhoto; }
+      if(pendingPhotos.length) dataObj[photoKey] = pendingPhotos.slice();
+      else delete dataObj[photoKey];
     }
     await setDay(dataKey, dataObj);
     const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
@@ -2273,6 +2290,7 @@ async function gerarRelatorio(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const pageH = doc.internal.pageSize.height;
+    const pageW = doc.internal.pageSize.width;
     let y = 20;
     function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
 
@@ -2313,8 +2331,9 @@ async function gerarRelatorio(){
           const exId = `tr_${ex.id}`;
           const exDone = rec[exId];
           const exComment = rec[`c_${exId}`];
+          const exGrupo = ex.grupoPt ? ` [${ex.grupoPt}]` : '';
           ensureSpace(6);
-          doc.text(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exComment ? ' — ' + exComment : ''}`, 26, y);
+          doc.text(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exGrupo}${exComment ? ' — ' + exComment : ''}`, 26, y);
           y += 5;
         });
         if(rec.reposto_em){
@@ -2358,13 +2377,19 @@ async function gerarRelatorio(){
           const label = MEAL_LABELS[mealId].pt;
           const done = rec[mealId];
           const comment = rec[`c_${mealId}`];
-          const photo = rec[`p_${mealId}`];
-          ensureSpace(photo ? 32 : 6);
+          const photos = getPhotosArr(rec, `p_${mealId}`);
+          ensureSpace(photos.length ? 32 : 6);
           doc.text(`${done ? '[X]' : '[ ]'} ${label}${comment ? ' — ' + comment : ''}`, 26, y);
           y += 5.5;
-          if(photo){
-            try{ doc.addImage(photo, 'JPEG', 26, y, 30, 30); y += 33; }
-            catch(e){ console.error('photo embed error', e); }
+          if(photos.length){
+            let px = 26;
+            photos.forEach(photo => {
+              if(px + 30 > pageW - 20){ px = 26; y += 33; ensureSpace(33); }
+              try{ doc.addImage(photo, 'JPEG', px, y, 30, 30); }
+              catch(e){ console.error('photo embed error', e); }
+              px += 33;
+            });
+            y += 33;
           }
         }
       }
@@ -2388,7 +2413,6 @@ async function gerarRelatorio(){
       }
     }
 
-    const pageW = doc.internal.pageSize.width;
     const totalPages = doc.internal.getNumberOfPages();
     for(let p = 1; p <= totalPages; p++){
       doc.setPage(p);
