@@ -339,6 +339,7 @@
         <label class="rep-check"><input type="checkbox" id="rep-suplementos" checked> <span data-k="repSupl">Suplementos</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-medicamentos"> <span data-k="repMed">🔒 Medicamentos (confidencial)</span></label>
         <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorio()">—</button>
+        <div id="relatorio-status" style="margin-top:10px; font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--ink-dim); white-space:pre-wrap; word-break:break-word;"></div>
       </div>
       <div id="cal-detail"></div>
     </div>
@@ -2336,9 +2337,14 @@ const MEAL_LABELS = {
 };
 
 async function gerarRelatorio(){
+  const statusEl = document.getElementById('relatorio-status');
+  const btnEl = document.getElementById('btn-relatorio');
+  const log = (msg) => { if(statusEl) statusEl.textContent = msg; };
   try{
+    log('Iniciando...');
     if(!window.jspdf || !window.jspdf.jsPDF){
       alert(T[currentLang].pdfLibLoading);
+      log('⚠ Biblioteca jsPDF não carregada.');
       return;
     }
     const incl = {
@@ -2350,6 +2356,7 @@ async function gerarRelatorio(){
       suplementos: document.getElementById('rep-suplementos').checked,
       medicamentos: document.getElementById('rep-medicamentos').checked && medUnlocked,
     };
+    log('Categorias lidas. Calculando datas...');
 
     let dates = [];
     let titlePeriod = '';
@@ -2361,7 +2368,7 @@ async function gerarRelatorio(){
       for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
       titlePeriod = `Semana de ${monday.getDate()}/${monday.getMonth()+1}`;
     } else if(reportScope === 'dias'){
-      if(diasPickerDates.length === 0){ alert(T[currentLang].noDaysSelected); return; }
+      if(diasPickerDates.length === 0){ alert(T[currentLang].noDaysSelected); log(''); return; }
       dates = diasPickerDates.map(dstr => { const [y,m,d] = dstr.split('-').map(Number); return new Date(y, m-1, d); });
       titlePeriod = `${dates.length} dias selecionados`;
     } else {
@@ -2369,6 +2376,7 @@ async function gerarRelatorio(){
       for(let d=1; d<=daysInMonth; d++){ dates.push(new Date(calMonth.getFullYear(), calMonth.getMonth(), d)); }
       titlePeriod = `${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`;
     }
+    log(`${dates.length} dia(s) a processar. Criando documento PDF...`);
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -2380,7 +2388,10 @@ async function gerarRelatorio(){
     doc.setFont('helvetica','bold'); doc.setFontSize(15);
     doc.text(`Gandini 4.0 — Relatório (${titlePeriod})`, 20, y); y += 10;
 
+    let dayIdx = 0;
     for(const dt of dates){
+      dayIdx++;
+      log(`Processando dia ${dayIdx}/${dates.length}: ${fmtKey(dt)}...`);
       const rec = await getDay(fmtKey(dt));
       const type = getDayType(dt);
       ensureSpace(9);
@@ -2496,6 +2507,7 @@ async function gerarRelatorio(){
       }
     }
 
+    log('Montando numeração de páginas...');
     const totalPages = doc.internal.getNumberOfPages();
     for(let p = 1; p <= totalPages; p++){
       doc.setPage(p);
@@ -2505,8 +2517,15 @@ async function gerarRelatorio(){
       doc.setTextColor(0,0,0);
     }
 
+    log('Salvando arquivo PDF...');
     doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.pdf`);
-  }catch(e){ console.error('relatorio error', e); alert(T[currentLang].reportGenError); }
+    log('✅ PDF gerado com sucesso!');
+    setTimeout(() => { if(statusEl && statusEl.textContent.startsWith('✅')) log(''); }, 6000);
+  }catch(e){
+    console.error('relatorio error', e);
+    log(`❌ ERRO: ${e.message || e}\n\n${e.stack || ''}`);
+    alert(T[currentLang].reportGenError);
+  }
 }
 
 function limparCamposMedida(){
