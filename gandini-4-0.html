@@ -242,14 +242,14 @@
   <div class="mark">Plano de Vida · Gandini</div>
   <h1>Gandini 4.0</h1>
   <input type="password" id="pw" placeholder="senha / password / パスワード" autocomplete="off">
-  <button onclick="tryUnlock()">Entrar</button>
-  <button id="gate-fp-btn" onclick="unlockWithFingerprint()" style="display:none;background:var(--surface-2);color:var(--ink);border:1px solid var(--border);margin-top:10px;">👆 Usar impressão digital</button>
+  <button onclick="tryUnlock()">Entrar / Enter / 入る</button>
+  <button id="gate-fp-btn" onclick="unlockWithFingerprint()" style="display:none;background:var(--surface-2);color:var(--ink);border:1px solid var(--border);margin-top:10px;">👆 Usar digital / Use fingerprint / 指紋を使う</button>
   <div class="err" id="gate-err"></div>
 </div>
 
 <div id="pw-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:200; align-items:center; justify-content:center; padding:24px;">
   <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; max-width:280px; width:100%;">
-    <div style="font-family:'Fraunces',serif; color:var(--ink); font-size:16px; margin-bottom:14px;">🔒 Confidencial</div>
+    <div id="pw-modal-title" style="font-family:'Fraunces',serif; color:var(--ink); font-size:16px; margin-bottom:14px;">🔒 Confidencial</div>
     <input type="password" id="pw-modal-input" placeholder="senha" autocomplete="off" style="width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); padding:11px; border-radius:8px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; box-sizing:border-box; font-size:15px;">
     <div style="display:flex; gap:8px; margin-top:12px;">
       <button id="pw-modal-ok" class="btn-secondary" style="flex:1;">Entrar</button>
@@ -517,6 +517,11 @@ function requestPasswordUnlock(){
     input.value = ''; err.textContent = '';
     fpBtn.style.display = (localStorage.getItem('gandini-fp-cred') && window.PublicKeyCredential) ? 'block' : 'none';
     modal.style.display = 'flex';
+    document.getElementById('pw-modal-title').textContent = T[currentLang].pwModalTitle;
+    okBtn.textContent = T[currentLang].pwModalOk;
+    cancelBtn.textContent = T[currentLang].pwModalCancel;
+    fpBtn.textContent = T[currentLang].pwModalFp;
+    input.placeholder = T[currentLang].pwModalPlaceholder;
     setTimeout(() => input.focus(), 50);
 
     function cleanup(){
@@ -528,7 +533,7 @@ function requestPasswordUnlock(){
     }
     function onOk(){
       if(input.value === PASSWORD){ cleanup(); resolve(true); }
-      else { err.textContent = 'Senha incorreta.'; }
+      else { err.textContent = T[currentLang].pwModalWrong; }
     }
     function onCancel(){ cleanup(); resolve(false); }
     async function onFp(){
@@ -539,7 +544,7 @@ function requestPasswordUnlock(){
           publicKey: { challenge, allowCredentials: [{ id: b64ToBuf(credB64), type: 'public-key' }], userVerification: 'required', timeout: 60000 }
         });
         cleanup(); resolve(true);
-      }catch(e){ err.textContent = 'Digital não reconhecida — usa a senha.'; }
+      }catch(e){ err.textContent = T[currentLang].pwModalFpFailed; }
     }
     function onKey(e){ if(e.key === 'Enter') onOk(); }
     okBtn.addEventListener('click', onOk);
@@ -629,7 +634,7 @@ async function unlockWithFingerprint(){
     unlockApp();
   }catch(e){
     console.error('fingerprint auth error', e);
-    document.getElementById('gate-err').textContent = 'Digital não reconhecida — usa a senha.';
+    document.getElementById('gate-err').textContent = 'Digital não reconhecida — usa a senha. / Fingerprint not recognized — use the password. / 指紋が認識されませんでした。';
   }
 }
 
@@ -704,6 +709,8 @@ const T = {
     pdfLibLoading:'A biblioteca de PDF ainda não carregou. Espera alguns segundos e tenta de novo (ou dá um hard refresh na página).',
     noDaysSelected:'Adiciona pelo menos um dia na lista antes de gerar.',
     reportGenError:'Erro ao gerar relatório.',
+    pwModalTitle:'🔒 Confidencial', pwModalOk:'Entrar', pwModalCancel:'Cancelar', pwModalFp:'👆 Usar impressão digital',
+    pwModalPlaceholder:'senha', pwModalWrong:'Senha incorreta.', pwModalFpFailed:'Digital não reconhecida — usa a senha.',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -770,6 +777,8 @@ const T = {
     pdfLibLoading:'The PDF library hasn\'t loaded yet. Wait a few seconds and try again (or do a hard refresh).',
     noDaysSelected:'Add at least one day to the list before generating.',
     reportGenError:'Error generating report.',
+    pwModalTitle:'🔒 Confidential', pwModalOk:'Enter', pwModalCancel:'Cancel', pwModalFp:'👆 Use fingerprint',
+    pwModalPlaceholder:'password', pwModalWrong:'Wrong password.', pwModalFpFailed:'Fingerprint not recognized — use the password.',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -836,6 +845,8 @@ const T = {
     pdfLibLoading:'PDFライブラリがまだ読み込まれていません。数秒待ってからもう一度お試しください（またはページを強制的に再読み込みしてください）。',
     noDaysSelected:'作成する前にリストに少なくとも1日を追加してください。',
     reportGenError:'レポートの作成に失敗しました。',
+    pwModalTitle:'🔒 非公開', pwModalOk:'入る', pwModalCancel:'キャンセル', pwModalFp:'👆 指紋を使う',
+    pwModalPlaceholder:'パスワード', pwModalWrong:'パスワードが違います。', pwModalFpFailed:'指紋が認識されませんでした — パスワードを使ってください。',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
