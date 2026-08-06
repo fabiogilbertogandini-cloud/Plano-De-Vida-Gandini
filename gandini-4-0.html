@@ -315,13 +315,13 @@
       <div class="cal-grid" id="cal-grid"></div>
       <div class="report-panel" id="report-panel">
         <div class="report-scope-row">
-          <button class="scope-btn" data-scope="dia">Dia</button>
-          <button class="scope-btn" data-scope="semana">Semana</button>
-          <button class="scope-btn active" data-scope="mes">Mês</button>
-          <button class="scope-btn" data-scope="dias">Selecionar</button>
+          <button class="scope-btn" id="scope-dia" data-scope="dia">Dia</button>
+          <button class="scope-btn" id="scope-semana" data-scope="semana">Semana</button>
+          <button class="scope-btn active" id="scope-mes" data-scope="mes">Mês</button>
+          <button class="scope-btn" id="scope-dias" data-scope="dias">Selecionar</button>
         </div>
         <div id="dias-picker" style="display:none; margin-bottom:12px;">
-          <div style="font-size:12px; color:var(--ink-dim); margin-bottom:8px;">Toque nos dias no calendário acima pra marcar — ou use o campo abaixo pra adicionar um dia de outro mês:</div>
+          <div id="dias-picker-hint" style="font-size:12px; color:var(--ink-dim); margin-bottom:8px;">Toque nos dias no calendário acima pra marcar — ou use o campo abaixo pra adicionar um dia de outro mês:</div>
           <div style="display:flex; gap:8px; margin-bottom:8px;">
             <input type="date" id="dias-picker-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;">
             <button class="btn-secondary" id="dias-picker-add" style="padding:8px 16px;">+</button>
@@ -684,6 +684,14 @@ const T = {
     medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
     btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Gerar PDF do relatório', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
+    scopeDia:'Dia', scopeSemana:'Semana', scopeMes:'Mês', scopeDias:'Selecionar',
+    diasPickerHint:'Toque nos dias no calendário acima pra marcar — ou use o campo abaixo pra adicionar um dia de outro mês:',
+    diasPickerClear:'limpar toda a seleção',
+    repRefeicoes:'Refeições (com fotos e comentários)', repEspiritual:'Espiritual', repTreino:'Treino', repAgua:'Água',
+    repMedidas:'Medidas corporais', repSupl:'Suplementos', repMed:'🔒 Medicamentos (confidencial)',
+    cameraBtn:'📷 Câmera', galleryBtn:'🖼️ Galeria',
+    repoMarcar:'🔁 Esse treino é reposição de um dia perdido', repoConfirmar:'Confirmar', repoDesfazer:'desfazer',
+    repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -730,6 +738,14 @@ const T = {
     medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
     btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Generate report PDF', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
+    scopeDia:'Day', scopeSemana:'Week', scopeMes:'Month', scopeDias:'Select',
+    diasPickerHint:'Tap the days on the calendar above to mark them — or use the field below to add a day from another month:',
+    diasPickerClear:'clear entire selection',
+    repRefeicoes:'Meals (with photos and comments)', repEspiritual:'Spiritual', repTreino:'Workout', repAgua:'Water',
+    repMedidas:'Body measurements', repSupl:'Supplements', repMed:'🔒 Medications (confidential)',
+    cameraBtn:'📷 Camera', galleryBtn:'🖼️ Gallery',
+    repoMarcar:'🔁 This workout is a make-up for a missed day', repoConfirmar:'Confirm', repoDesfazer:'undo',
+    repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -776,6 +792,14 @@ const T = {
     medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
     btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'レポートPDFを作成', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
+    scopeDia:'日', scopeSemana:'週', scopeMes:'月', scopeDias:'選択',
+    diasPickerHint:'上のカレンダーで日付をタップして選択 — または下の欄で他の月の日付を追加できます：',
+    diasPickerClear:'選択をすべてクリア',
+    repRefeicoes:'食事（写真とコメント付き）', repEspiritual:'霊的な時間', repTreino:'トレーニング', repAgua:'水分',
+    repMedidas:'体測定', repSupl:'サプリメント', repMed:'🔒 服薬（非公開）',
+    cameraBtn:'📷 カメラ', galleryBtn:'🖼️ ギャラリー',
+    repoMarcar:'🔁 このトレーニングは見送った日の振替です', repoConfirmar:'確定', repoDesfazer:'取り消す',
+    repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
@@ -1271,6 +1295,16 @@ function renderStaticText(){
   document.getElementById('perguntas-title').textContent = t.perguntasTitle;
   document.getElementById('q-new').placeholder = t.qPlaceholder;
   document.getElementById('hist-title').textContent = t.histTitle;
+  document.getElementById('scope-dia').textContent = t.scopeDia;
+  document.getElementById('scope-semana').textContent = t.scopeSemana;
+  document.getElementById('scope-mes').textContent = t.scopeMes;
+  document.getElementById('scope-dias').textContent = t.scopeDias;
+  document.getElementById('dias-picker-hint').textContent = t.diasPickerHint;
+  document.getElementById('dias-picker-clear-all').textContent = t.diasPickerClear;
+  document.querySelectorAll('[data-k]').forEach(el => {
+    const k = el.dataset.k;
+    if(t[k] !== undefined) el.textContent = t[k];
+  });
 }
 
 function renderDateHeader(dateObj, dayType){
@@ -1553,22 +1587,23 @@ function fmtKeyDisplay(k){
   return `${d}/${m}`;
 }
 function renderReposicaoControl(dataObj, dateKey, rerenderFn){
+  const t = T[currentLang];
   const wrap = document.createElement('div');
   wrap.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);';
   if(dataObj.reposto_em){
-    wrap.innerHTML = `<div style="font-size:12px; color:var(--ink-dim);">⚠ Não treinado — porém, reposto no dia <b>${fmtKeyDisplay(dataObj.reposto_em)}</b></div>`;
+    wrap.innerHTML = `<div style="font-size:12px; color:var(--ink-dim);">${t.repoNaoTreinado} <b>${fmtKeyDisplay(dataObj.reposto_em)}</b></div>`;
   } else if(dataObj.reposicao_de){
-    wrap.innerHTML = `<div style="font-size:12px; color:var(--sage);">🔁 Reposição do treino do dia <b>${fmtKeyDisplay(dataObj.reposicao_de)}</b> — <span class="link-btn" id="desfazer-repo">desfazer</span></div>`;
+    wrap.innerHTML = `<div style="font-size:12px; color:var(--sage);">${t.repoFeito} <b>${fmtKeyDisplay(dataObj.reposicao_de)}</b> — <span class="link-btn" id="desfazer-repo">${t.repoDesfazer}</span></div>`;
     wrap.querySelector('#desfazer-repo').addEventListener('click', async () => {
       await desfazerReposicao(dateKey);
       rerenderFn();
     });
   } else {
-    wrap.innerHTML = `<span class="link-btn" id="marcar-repo">🔁 Esse treino é reposição de um dia perdido</span>`;
+    wrap.innerHTML = `<span class="link-btn" id="marcar-repo">${t.repoMarcar}</span>`;
     wrap.querySelector('#marcar-repo').addEventListener('click', () => {
       wrap.innerHTML = `<div style="display:flex; gap:8px; align-items:center;">
         <input type="date" id="repo-date-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;" max="${dateKey}">
-        <button class="btn-secondary" id="repo-confirm" style="padding:8px 16px;">Confirmar</button>
+        <button class="btn-secondary" id="repo-confirm" style="padding:8px 16px;">${t.repoConfirmar}</button>
       </div>`;
       wrap.querySelector('#repo-confirm').addEventListener('click', async () => {
         const val = wrap.querySelector('#repo-date-input').value;
@@ -1599,8 +1634,8 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
       <div class="photo-row">
         <input type="file" accept="image/*" capture="environment" class="photo-input-camera" style="display:none">
         <input type="file" accept="image/*" multiple class="photo-input-gallery" style="display:none">
-        <button class="photo-btn" type="button" data-src="camera">📷 Câmera</button>
-        <button class="photo-btn" type="button" data-src="gallery">🖼️ Galeria</button>
+        <button class="photo-btn" type="button" data-src="camera">${t.cameraBtn}</button>
+        <button class="photo-btn" type="button" data-src="gallery">${t.galleryBtn}</button>
       </div>
       <div class="photo-thumbs"></div>`;
   }
