@@ -692,6 +692,9 @@ const T = {
     cameraBtn:'📷 Câmera', galleryBtn:'🖼️ Galeria',
     repoMarcar:'🔁 Esse treino é reposição de um dia perdido', repoConfirmar:'Confirmar', repoDesfazer:'desfazer',
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
+    medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
+    suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
+    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -746,6 +749,9 @@ const T = {
     cameraBtn:'📷 Camera', galleryBtn:'🖼️ Gallery',
     repoMarcar:'🔁 This workout is a make-up for a missed day', repoConfirmar:'Confirm', repoDesfazer:'undo',
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
+    medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
+    suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
+    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -800,6 +806,9 @@ const T = {
     cameraBtn:'📷 カメラ', galleryBtn:'🖼️ ギャラリー',
     repoMarcar:'🔁 このトレーニングは見送った日の振替です', repoConfirmar:'確定', repoDesfazer:'取り消す',
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
+    medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
+    suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
+    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
@@ -1172,7 +1181,7 @@ function pauseSuplemento(id){
   if(item){ item.ativo = !item.ativo; saveSuplementosList(list); renderHoje(); }
 }
 function deleteSuplemento(id){
-  if(!confirm('Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)')) return;
+  if(!confirm(T[currentLang].suplConfirmDelete)) return;
   let list = getSuplementosList();
   list = list.filter(s => s.id !== id);
   saveSuplementosList(list);
@@ -1337,7 +1346,7 @@ async function renderHoje(){
       const lockBtn = document.createElement('button');
       lockBtn.className = 'btn-secondary';
       lockBtn.style.width = '100%';
-      lockBtn.textContent = '🔒 Toque pra ver (confidencial)';
+      lockBtn.textContent = t.medLockBtn;
       lockBtn.addEventListener('click', async () => {
         const ok = await requestPasswordUnlock();
         if(ok){ medUnlocked = true; renderHoje(); }
@@ -1362,7 +1371,7 @@ async function renderHoje(){
       const hideBtn = document.createElement('button');
       hideBtn.className = 'btn-secondary';
       hideBtn.style.cssText = 'width:100%;margin-top:8px;';
-      hideBtn.textContent = '🔒 Esconder de novo';
+      hideBtn.textContent = t.medHideBtn;
       hideBtn.addEventListener('click', () => { medUnlocked = false; renderHoje(); });
       body.appendChild(hideBtn);
     }
@@ -1375,7 +1384,7 @@ async function renderHoje(){
         if(!row) return;
         const mgmtRow = document.createElement('div');
         mgmtRow.style.cssText = 'display:flex;gap:10px;margin:-4px 0 6px 36px;';
-        mgmtRow.innerHTML = `<button class="link-btn" data-act="pause" data-id="${item.id}">⏸ pausar</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 remover</button>`;
+        mgmtRow.innerHTML = `<button class="link-btn" data-act="pause" data-id="${item.id}">⏸ ${t.suplPause}</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 ${t.suplRemove}</button>`;
         row.after(mgmtRow);
         mgmtRow.querySelector('[data-act="pause"]').addEventListener('click', () => pauseSuplemento(item.id));
         mgmtRow.querySelector('[data-act="del"]').addEventListener('click', () => deleteSuplemento(item.id));
@@ -1383,14 +1392,14 @@ async function renderHoje(){
       if(paused.length){
         const pausedWrap = document.createElement('div');
         pausedWrap.style.cssText = 'margin-top:6px;';
-        pausedWrap.innerHTML = `<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px;">Pausados:</div>`;
+        pausedWrap.innerHTML = `<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px;">${t.suplPausedLabel}</div>`;
         paused.forEach(item => {
           const r = document.createElement('div');
           r.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 0;color:var(--ink-faint);font-size:13px;';
           r.innerHTML = `<span style="text-decoration:line-through;">${item.nome}</span>`;
           const btnRow = document.createElement('div');
           btnRow.style.cssText = 'display:flex;gap:10px;';
-          btnRow.innerHTML = `<button class="link-btn" data-act="resume" data-id="${item.id}">▶ reativar</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 remover</button>`;
+          btnRow.innerHTML = `<button class="link-btn" data-act="resume" data-id="${item.id}">▶ ${t.suplResume}</button><button class="link-btn" data-act="del" data-id="${item.id}">🗑 ${t.suplRemove}</button>`;
           r.appendChild(btnRow);
           pausedWrap.appendChild(r);
           btnRow.querySelector('[data-act="resume"]').addEventListener('click', () => pauseSuplemento(item.id));
@@ -1400,7 +1409,7 @@ async function renderHoje(){
       }
       const addRow = document.createElement('div');
       addRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
-      addRow.innerHTML = `<input type="text" placeholder="novo suplemento..." style="flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:8px;font-size:13px;box-sizing:border-box;"><button class="btn-secondary" style="padding:8px 16px;">+</button>`;
+      addRow.innerHTML = `<input type="text" placeholder="${t.suplNewPlaceholder}" style="flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:8px;font-size:13px;box-sizing:border-box;"><button class="btn-secondary" style="padding:8px 16px;">+</button>`;
       body.appendChild(addRow);
       const addInput = addRow.querySelector('input');
       const addBtn = addRow.querySelector('button');
@@ -1964,7 +1973,7 @@ async function renderDayDetail(dateObj){
       const lockBtn = document.createElement('button');
       lockBtn.className = 'btn-secondary';
       lockBtn.style.width = '100%';
-      lockBtn.textContent = '🔒 Toque pra ver (confidencial)';
+      lockBtn.textContent = T[currentLang].medLockBtn;
       lockBtn.addEventListener('click', async () => {
         const ok = await requestPasswordUnlock();
         if(ok){ medUnlocked = true; renderDayDetail(dateObj); }
@@ -2009,7 +2018,7 @@ async function renderDayDetail(dateObj){
         const hideBtn = document.createElement('button');
         hideBtn.className = 'btn-secondary';
         hideBtn.style.cssText = 'width:100%;margin-top:8px;';
-        hideBtn.textContent = '🔒 Esconder de novo';
+        hideBtn.textContent = T[currentLang].medHideBtn;
         hideBtn.addEventListener('click', () => { medUnlocked = false; renderDayDetail(dateObj); });
         body.appendChild(hideBtn);
       }
