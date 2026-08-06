@@ -272,7 +272,7 @@
     </div>
     <div class="lang-row">
       <div class="lang-btn" id="gcal-btn" onclick="connectGoogleCalendar()" style="min-width:150px;">📅 Google Calendar</div>
-      <div class="lang-btn" onclick="logoutApp()">🔒 Sair</div>
+      <div class="lang-btn" id="logout-btn" onclick="logoutApp()">🔒 Sair</div>
     </div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
@@ -444,7 +444,7 @@ function initGCal(){
 window.addEventListener('load', () => { setTimeout(initGCal, 500); });
 
 function connectGoogleCalendar(){
-  if(!gcalTokenClient){ alert('Google ainda carregando, tenta de novo em alguns segundos.'); return; }
+  if(!gcalTokenClient){ alert(T[currentLang].gcalLoading); return; }
   gcalTokenClient.requestAccessToken();
 }
 
@@ -496,7 +496,7 @@ function unlockApp(){
 }
 
 function logoutApp(){
-  if(!confirm('Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.')) return;
+  if(!confirm(T[currentLang].logoutConfirm)) return;
   try{ localStorage.removeItem('gandini-unlocked-until'); }catch(e){}
   document.getElementById('app').style.display = 'none';
   document.getElementById('gate').style.display = 'flex';
@@ -590,7 +590,7 @@ function showFingerprintButtonIfAvailable(){
 }
 
 async function registerFingerprint(){
-  if(!window.PublicKeyCredential){ alert('Esse navegador não suporta login por impressão digital.'); return; }
+  if(!window.PublicKeyCredential){ alert(T[currentLang].fpNotSupported); return; }
   try{
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
@@ -606,10 +606,10 @@ async function registerFingerprint(){
     });
     localStorage.setItem('gandini-fp-cred', bufToB64(cred.rawId));
     showFingerprintButtonIfAvailable();
-    alert('Impressão digital cadastrada! Da próxima vez você pode entrar com ela.');
+    alert(T[currentLang].fpRegistered);
   }catch(e){
     console.error('fingerprint register error', e);
-    alert('Não foi possível cadastrar a digital neste aparelho/navegador.');
+    alert(T[currentLang].fpFailed);
   }
 }
 
@@ -695,6 +695,15 @@ const T = {
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
     suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)',
+    logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
+    gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
+    fpNotSupported:'Esse navegador não suporta login por impressão digital.',
+    fpRegistered:'Impressão digital cadastrada! Da próxima vez você pode entrar com ela.',
+    fpFailed:'Não foi possível cadastrar a digital neste aparelho/navegador.',
+    backupExportError:'Erro ao exportar backup.',
+    pdfLibLoading:'A biblioteca de PDF ainda não carregou. Espera alguns segundos e tenta de novo (ou dá um hard refresh na página).',
+    noDaysSelected:'Adiciona pelo menos um dia na lista antes de gerar.',
+    reportGenError:'Erro ao gerar relatório.',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -752,6 +761,15 @@ const T = {
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
     suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)',
+    logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
+    gcalLoading:'Google is still loading, try again in a few seconds.',
+    fpNotSupported:'This browser doesn\'t support fingerprint login.',
+    fpRegistered:'Fingerprint registered! Next time you can sign in with it.',
+    fpFailed:'Could not register the fingerprint on this device/browser.',
+    backupExportError:'Error exporting backup.',
+    pdfLibLoading:'The PDF library hasn\'t loaded yet. Wait a few seconds and try again (or do a hard refresh).',
+    noDaysSelected:'Add at least one day to the list before generating.',
+    reportGenError:'Error generating report.',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -809,6 +827,15 @@ const T = {
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
     suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）',
+    logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
+    gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
+    fpNotSupported:'このブラウザは指紋ログインに対応していません。',
+    fpRegistered:'指紋を登録しました！次回からはこれでログインできます。',
+    fpFailed:'この端末・ブラウザでは指紋を登録できませんでした。',
+    backupExportError:'バックアップの書き出しに失敗しました。',
+    pdfLibLoading:'PDFライブラリがまだ読み込まれていません。数秒待ってからもう一度お試しください（またはページを強制的に再読み込みしてください）。',
+    noDaysSelected:'作成する前にリストに少なくとも1日を追加してください。',
+    reportGenError:'レポートの作成に失敗しました。',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
@@ -1310,6 +1337,7 @@ function renderStaticText(){
   document.getElementById('scope-dias').textContent = t.scopeDias;
   document.getElementById('dias-picker-hint').textContent = t.diasPickerHint;
   document.getElementById('dias-picker-clear-all').textContent = t.diasPickerClear;
+  document.getElementById('logout-btn').textContent = t.logoutBtn;
   document.querySelectorAll('[data-k]').forEach(el => {
     const k = el.dataset.k;
     if(t[k] !== undefined) el.textContent = t[k];
@@ -2198,7 +2226,7 @@ function exportBackup(){
     URL.revokeObjectURL(url);
     localStorage.setItem('gandini-last-backup', todayKey);
     renderBackupStatus();
-  }catch(e){ console.error('backup export error', e); alert('Erro ao exportar backup.'); }
+  }catch(e){ console.error('backup export error', e); alert(T[currentLang].backupExportError); }
 }
 
 function renderBackupStatus(){
@@ -2299,7 +2327,7 @@ const MEAL_LABELS = {
 async function gerarRelatorio(){
   try{
     if(!window.jspdf || !window.jspdf.jsPDF){
-      alert('A biblioteca de PDF ainda não carregou. Espera alguns segundos e tenta de novo (ou dá um hard refresh na página).');
+      alert(T[currentLang].pdfLibLoading);
       return;
     }
     const incl = {
@@ -2322,7 +2350,7 @@ async function gerarRelatorio(){
       for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
       titlePeriod = `Semana de ${monday.getDate()}/${monday.getMonth()+1}`;
     } else if(reportScope === 'dias'){
-      if(diasPickerDates.length === 0){ alert('Adiciona pelo menos um dia na lista antes de gerar.'); return; }
+      if(diasPickerDates.length === 0){ alert(T[currentLang].noDaysSelected); return; }
       dates = diasPickerDates.map(dstr => { const [y,m,d] = dstr.split('-').map(Number); return new Date(y, m-1, d); });
       titlePeriod = `${dates.length} dias selecionados`;
     } else {
@@ -2467,7 +2495,7 @@ async function gerarRelatorio(){
     }
 
     doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.pdf`);
-  }catch(e){ console.error('relatorio error', e); alert('Erro ao gerar relatório.'); }
+  }catch(e){ console.error('relatorio error', e); alert(T[currentLang].reportGenError); }
 }
 
 function limparCamposMedida(){
