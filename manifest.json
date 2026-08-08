@@ -30,5 +30,19 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar água +250ml",
+      "short_name": "Água +250ml",
+      "url": "./gandini-4-0.html?quick=agua",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Abrir treino de hoje",
+      "short_name": "Treino de hoje",
+      "url": "./gandini-4-0.html?quick=treino",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

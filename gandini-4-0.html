@@ -200,7 +200,10 @@
   .task-comment-box{ display:none; margin:6px 0 0 36px; }
   .task-comment-box.open{ display:block; }
   .task-comment-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
-    border-radius:8px; padding:8px; font-size:12.5px; font-family:'Inter',sans-serif; resize:vertical; box-sizing:border-box; }
+    border-radius:8px; padding:8px 34px 8px 8px; font-size:12.5px; font-family:'Inter',sans-serif; resize:vertical; box-sizing:border-box; }
+  .mic-btn{ position:absolute; top:6px; right:6px; background:none; border:none; font-size:16px; cursor:pointer; opacity:0.7; padding:2px; line-height:1; }
+  .mic-btn.recording{ opacity:1; animation:mic-pulse 1s infinite; }
+  @keyframes mic-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.2); } }
   .photo-row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
   .photo-btn{ background:var(--surface-2); border:1px solid var(--border); color:var(--ink-dim); border-radius:8px;
     padding:7px 12px; font-size:12px; cursor:pointer; }
@@ -705,7 +708,7 @@ const T = {
     diasPickerClear:'limpar toda a seleção',
     repRefeicoes:'Refeições (com fotos e comentários)', repEspiritual:'Espiritual', repTreino:'Treino', repAgua:'Água',
     repMedidas:'Medidas corporais', repSupl:'Suplementos', repMed:'🔒 Medicamentos (confidencial)',
-    cameraBtn:'📷 Câmera', galleryBtn:'🖼️ Galeria',
+    cameraBtn:'📷 Câmera', galleryBtn:'🖼️ Galeria', micBtn:'Ditar por voz',
     repoMarcar:'🔁 Esse treino é reposição de um dia perdido', repoConfirmar:'Confirmar', repoDesfazer:'desfazer',
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
@@ -773,7 +776,7 @@ const T = {
     diasPickerClear:'clear entire selection',
     repRefeicoes:'Meals (with photos and comments)', repEspiritual:'Spiritual', repTreino:'Workout', repAgua:'Water',
     repMedidas:'Body measurements', repSupl:'Supplements', repMed:'🔒 Medications (confidential)',
-    cameraBtn:'📷 Camera', galleryBtn:'🖼️ Gallery',
+    cameraBtn:'📷 Camera', galleryBtn:'🖼️ Gallery', micBtn:'Voice dictation',
     repoMarcar:'🔁 This workout is a make-up for a missed day', repoConfirmar:'Confirm', repoDesfazer:'undo',
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
@@ -841,7 +844,7 @@ const T = {
     diasPickerClear:'選択をすべてクリア',
     repRefeicoes:'食事（写真とコメント付き）', repEspiritual:'霊的な時間', repTreino:'トレーニング', repAgua:'水分',
     repMedidas:'体測定', repSupl:'サプリメント', repMed:'🔒 服薬（非公開）',
-    cameraBtn:'📷 カメラ', galleryBtn:'🖼️ ギャラリー',
+    cameraBtn:'📷 カメラ', galleryBtn:'🖼️ ギャラリー', micBtn:'音声入力',
     repoMarcar:'🔁 このトレーニングは見送った日の振替です', repoConfirmar:'確定', repoDesfazer:'取り消す',
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
@@ -1372,6 +1375,34 @@ async function syncFromCloud(){
       }
     }
     if(failed > 0) console.warn('Dias que falharam ao sincronizar:', failedDays.join(', '));
+
+    // Medidas (measurements)
+    try{
+      const medSnap = await fbDb.collection('medidas').get();
+      const remoteMedKeys = new Set();
+      for(const doc of medSnap.docs){
+        remoteMedKeys.add(doc.id);
+        const remote = doc.data();
+        const localRaw = localStorage.getItem(`gandini-medidas:${doc.id}`);
+        const local = localRaw ? JSON.parse(localRaw) : null;
+        const remoteTs = remote._updatedAt || 0;
+        const localTs = local && local._updatedAt || 0;
+        if(!local || remoteTs > localTs){
+          localStorage.setItem(`gandini-medidas:${doc.id}`, JSON.stringify(remote));
+          pulled++;
+        }
+      }
+      const localMedKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-medidas:'));
+      for(const lk of localMedKeys){
+        const medKey = lk.replace('gandini-medidas:', '');
+        if(!remoteMedKeys.has(medKey)){
+          const local = JSON.parse(localStorage.getItem(lk));
+          local._updatedAt = local._updatedAt || Date.now();
+          try{ await fbDb.collection('medidas').doc(medKey).set(local); pushed++; }
+          catch(e){ console.error(`firestore medida push error for ${medKey}`, e); failed++; }
+        }
+      }
+    }catch(e){ console.error('medidas sync error', e); }
     // Suplementos list — newest wins by _updatedAt
     try{
       const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
@@ -1437,6 +1468,25 @@ async function initApp(){
   dayData = await getDay(todayKey);
   renderAll();
   switchTab('hoje');
+  handleQuickAction();
+}
+
+function handleQuickAction(){
+  const params = new URLSearchParams(location.search);
+  const quick = params.get('quick');
+  if(!quick) return;
+  if(quick === 'agua'){
+    adjustWater(250);
+    setSyncStatus('💧 +250ml registrado!');
+    setTimeout(() => setSyncStatus(''), 4000);
+  } else if(quick === 'treino'){
+    document.getElementById('hoje-content').querySelectorAll('.section').forEach(sec => {
+      if(sec.querySelector('.section-title') && sec.querySelector('.section-title').textContent.includes(T[currentLang].sec.treino)){
+        sec.scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+    });
+  }
+  history.replaceState({}, '', location.pathname);
 }
 
 function renderAll(){
@@ -1448,6 +1498,7 @@ function renderAll(){
     renderDayDetail(today);
   }
   if(document.getElementById('view-semana').classList.contains('active')) renderSemana();
+  if(document.getElementById('view-medidas').classList.contains('active')) renderHistorico();
 }
 
 function renderStaticText(){
@@ -1812,7 +1863,11 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   const photoKey = `p_${taskId}`;
   const box = document.createElement('div');
   box.className = 'task-comment-box';
-  let boxHtml = `<textarea rows="2" placeholder="${t.commentPlaceholder}">${dataObj[commentKey] || ''}</textarea>`;
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let boxHtml = `<div style="position:relative;">
+    <textarea rows="2" placeholder="${t.commentPlaceholder}">${dataObj[commentKey] || ''}</textarea>
+    ${SpeechRec ? `<button class="mic-btn" type="button" title="${t.micBtn}">🎤</button>` : ''}
+  </div>`;
   if(isMeal){
     boxHtml += `
       <div class="photo-row">
@@ -1826,6 +1881,35 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   boxHtml += `<button class="comment-save-btn" type="button">${t.btnSave}</button><span class="comment-saved-msg"></span>`;
   box.innerHTML = boxHtml;
   container.appendChild(box);
+
+  if(SpeechRec){
+    const micBtn = box.querySelector('.mic-btn');
+    const textareaForMic = box.querySelector('textarea');
+    let recognizing = false;
+    const langMap = { pt:'pt-BR', en:'en-US', ja:'ja-JP' };
+    micBtn.addEventListener('click', () => {
+      if(recognizing) return;
+      const rec = new SpeechRec();
+      rec.lang = langMap[currentLang] || 'pt-BR';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      recognizing = true;
+      micBtn.classList.add('recording');
+      micBtn.textContent = '🔴';
+      rec.onresult = (ev) => {
+        const transcript = ev.results[0][0].transcript;
+        const sep = textareaForMic.value.trim() ? ' ' : '';
+        textareaForMic.value = textareaForMic.value.trim() + sep + transcript;
+      };
+      rec.onerror = () => {};
+      rec.onend = () => {
+        recognizing = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+      };
+      rec.start();
+    });
+  }
 
   let pendingPhotos = getPhotosArr(dataObj, photoKey);
 
@@ -2682,6 +2766,9 @@ async function deletarMedida(dataKey){
   const t = T[currentLang];
   if(!confirm(t.confirmDeleteMedida)) return;
   try{ localStorage.removeItem(`gandini-medidas:${dataKey}`); }catch(e){}
+  if(fbReady && fbAuth.currentUser){
+    fbDb.collection('medidas').doc(dataKey).delete().catch(e => console.error('firestore medida delete error', e));
+  }
   renderHistorico();
 }
 
@@ -2700,7 +2787,11 @@ async function salvarMedida(){
     panturrilha: document.getElementById('m-panturrilha').value,
   };
   try{
+    entry._updatedAt = Date.now();
     localStorage.setItem(`gandini-medidas:${data}`, JSON.stringify(entry));
+    if(fbReady && fbAuth.currentUser){
+      fbDb.collection('medidas').doc(data).set(entry).catch(e => console.error('firestore medida write error', e));
+    }
     document.getElementById('m-msg').style.color = 'var(--sage)';
     document.getElementById('m-msg').textContent = t.savedMsg;
     renderHistorico();
@@ -2726,7 +2817,8 @@ async function renderHistorico(){
       el.innerHTML = `<div style="color:var(--ink-faint);font-size:13px;">${t.noHistory}</div>`;
       return;
     }
-    el.innerHTML = entries.map(e => `
+    const chartHtml = renderWeightChartSVG(entries);
+    el.innerHTML = chartHtml + entries.map(e => `
       <div class="history-item">
         <span class="history-date">${e.data}</span>
         <span style="display:flex;align-items:center;gap:8px;">
@@ -2738,6 +2830,36 @@ async function renderHistorico(){
   }catch(e){
     el.innerHTML = `<div style="color:var(--ink-faint);font-size:13px;">${t.noHistory}</div>`;
   }
+}
+
+function renderWeightChartSVG(entries){
+  const pts = entries.filter(e => e.peso && !isNaN(parseFloat(e.peso)))
+    .map(e => ({ date: e.data, peso: parseFloat(e.peso) }))
+    .sort((a,b) => a.date.localeCompare(b.date));
+  if(pts.length < 2) return '';
+  const W = 600, H = 160, padL = 40, padR = 16, padT = 16, padB = 24;
+  const weights = pts.map(p => p.peso);
+  let min = Math.min(...weights), max = Math.max(...weights);
+  if(min === max){ min -= 1; max += 1; }
+  const range = max - min;
+  const x = i => padL + (i / (pts.length - 1)) * (W - padL - padR);
+  const y = w => padT + (1 - (w - min) / range) * (H - padT - padB);
+  const linePath = pts.map((p,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${y(p.peso).toFixed(1)}`).join(' ');
+  const dots = pts.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.peso).toFixed(1)}" r="3.5" fill="var(--amber)" />`).join('');
+  const firstLast = `<text x="${padL}" y="${H-4}" font-size="10" fill="var(--ink-faint)">${pts[0].date.slice(5)}</text>
+    <text x="${W-padR}" y="${H-4}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${pts[pts.length-1].date.slice(5)}</text>`;
+  const minMaxLabel = `<text x="${padL-4}" y="${y(max).toFixed(1)}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${max}kg</text>
+    <text x="${padL-4}" y="${y(min).toFixed(1)}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${min}kg</text>`;
+  return `<div style="margin-bottom:14px; background:var(--surface-2); border-radius:10px; padding:10px;">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>
+      <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>
+      <path d="${linePath}" fill="none" stroke="var(--amber)" stroke-width="2"/>
+      ${dots}
+      ${firstLast}
+      ${minMaxLabel}
+    </svg>
+  </div>`;
 }
 
 /* ---------------- PERGUNTAS (ad-hoc questions) ---------------- */
