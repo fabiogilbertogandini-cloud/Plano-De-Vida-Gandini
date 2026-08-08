@@ -1854,7 +1854,7 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
     async function handleFiles(fileList){
       for(const file of Array.from(fileList)){
         try{
-          const dataUrl = await compressImage(file, 500, 0.55);
+          const dataUrl = await compressImage(file, 650, 0.6);
           pendingPhotos.push(dataUrl);
         }catch(e){ console.error('photo compress error', e); }
       }
@@ -2615,18 +2615,18 @@ async function gerarRelatorio(){
           const done = rec[mealId];
           const comment = rec[`c_${mealId}`];
           const photos = getPhotosArr(rec, `p_${mealId}`);
-          ensureSpace(photos.length ? 32 : 6);
+          ensureSpace(photos.length ? 80 : 6);
           doc.text(`${done ? '[X]' : '[ ]'} ${label}${comment ? ' — ' + comment : ''}`, 26, y);
           y += 5.5;
           if(photos.length){
             let px = 26;
             photos.forEach(photo => {
-              if(px + 30 > pageW - 20){ px = 26; y += 33; ensureSpace(33); }
-              try{ doc.addImage(photo, 'JPEG', px, y, 30, 30); }
+              if(px + 75 > pageW - 20){ px = 26; y += 80; ensureSpace(80); }
+              try{ doc.addImage(photo, 'JPEG', px, y, 75, 75); }
               catch(e){ console.error('photo embed error', e); }
-              px += 33;
+              px += 80;
             });
-            y += 33;
+            y += 80;
           }
         }
       }
