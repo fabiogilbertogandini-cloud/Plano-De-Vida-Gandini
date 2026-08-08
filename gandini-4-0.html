@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <style>
@@ -276,6 +279,7 @@
       <div class="lang-btn" id="gcal-btn" onclick="connectGoogleCalendar()" style="min-width:150px;">📅 Google Calendar</div>
       <div class="lang-btn" id="logout-btn" onclick="logoutApp()">🔒 Sair</div>
     </div>
+    <div id="sync-status" style="text-align:center; font-size:11px; color:var(--ink-faint); margin:4px 0 0; min-height:14px;"></div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
         <path d="M 15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#262E3A" stroke-width="10" stroke-linecap="round"/>
@@ -490,12 +494,16 @@ async function refreshGCalViews(){
 
 const UNLOCK_HOURS = 12;
 
-function unlockApp(){
+function unlockApp(password){
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   const until = Date.now() + UNLOCK_HOURS * 60 * 60 * 1000;
   try{ localStorage.setItem('gandini-unlocked-until', String(until)); }catch(e){}
   initApp();
+  (async () => {
+    if(password) await firebaseSignInWithPassword(password);
+    await syncFromCloud();
+  })();
 }
 
 function logoutApp(){
@@ -573,7 +581,7 @@ function checkPersistedUnlock(){
 function tryUnlock(){
   const val = document.getElementById('pw').value;
   if(val === PASSWORD){
-    unlockApp();
+    unlockApp(val);
   } else {
     document.getElementById('gate-err').textContent = "Senha incorreta / Wrong password / パスワードが違います";
   }
@@ -1208,7 +1216,14 @@ function getSuplementosList(){
   return seed;
 }
 function saveSuplementosList(list){
-  try{ localStorage.setItem('gandini-suplementos-list', JSON.stringify(list)); }catch(e){}
+  const ts = Date.now();
+  try{
+    localStorage.setItem('gandini-suplementos-list', JSON.stringify(list));
+    localStorage.setItem('gandini-suplementos-ts', String(ts));
+  }catch(e){}
+  if(fbReady && fbAuth.currentUser){
+    fbDb.collection('meta').doc('suplementos').set({ list, _updatedAt: ts }).catch(e => console.error('firestore supl write error', e));
+  }
 }
 function addSuplemento(nome){
   if(!nome || !nome.trim()) return;
@@ -1281,14 +1296,118 @@ function cleanupOldPhotos(){
   }catch(e){ console.error('cleanup error', e); }
 }
 
-async function getDay(key){
+/* ---------------- FIREBASE SYNC ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDCpkExF7Jlu-amQ9boiwXb5SfZ6t4Jdro",
+  authDomain: "gandini-40.firebaseapp.com",
+  projectId: "gandini-40",
+  storageBucket: "gandini-40.firebasestorage.app",
+  messagingSenderId: "809929371965",
+  appId: "1:809929371965:web:f8bcd903fde9b1e3d91554"
+};
+const FIREBASE_FIXED_EMAIL = "fabio@gandini40.app";
+let fbApp = null, fbDb = null, fbAuth = null, fbReady = false, fbSyncing = false;
+try{
+  fbApp = firebase.initializeApp(firebaseConfig);
+  fbAuth = firebase.auth();
+  fbDb = firebase.firestore();
+  fbDb.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn('Firestore persistence not enabled:', e.code));
+  fbReady = true;
+}catch(e){ console.error('Firebase init error', e); }
+
+function setSyncStatus(msg){
+  const el = document.getElementById('sync-status');
+  if(el) el.textContent = msg;
+}
+
+async function firebaseSignInWithPassword(password){
+  if(!fbReady) return false;
+  try{
+    await fbAuth.signInWithEmailAndPassword(FIREBASE_FIXED_EMAIL, password);
+    return true;
+  }catch(e){
+    console.error('Firebase sign-in error', e);
+    return false;
+  }
+}
+
+async function syncFromCloud(){
+  if(!fbReady || !fbAuth.currentUser || fbSyncing) return;
+  fbSyncing = true;
+  setSyncStatus('☁️ Sincronizando...');
+  try{
+    // Days
+    const snap = await fbDb.collection('days').get();
+    let pulled = 0, pushed = 0;
+    const remoteKeys = new Set();
+    for(const doc of snap.docs){
+      remoteKeys.add(doc.id);
+      const remote = doc.data();
+      const localRaw = localStorage.getItem(`gandini-day:${doc.id}`);
+      const local = localRaw ? JSON.parse(localRaw) : null;
+      const remoteTs = remote._updatedAt || 0;
+      const localTs = local && local._updatedAt || 0;
+      if(!local || remoteTs > localTs){
+        localStorage.setItem(`gandini-day:${doc.id}`, JSON.stringify(remote));
+        pulled++;
+      }
+    }
+    // Push any local days that don't exist remotely yet (initial migration) or are newer
+    const localDayKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-day:'));
+    for(const lk of localDayKeys){
+      const dayKey = lk.replace('gandini-day:', '');
+      const local = JSON.parse(localStorage.getItem(lk));
+      if(!remoteKeys.has(dayKey)){
+        local._updatedAt = local._updatedAt || Date.now();
+        await fbDb.collection('days').doc(dayKey).set(local);
+        pushed++;
+      }
+    }
+    // Suplementos list — newest wins by _updatedAt
+    try{
+      const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
+      const localSupl = getSuplementosList();
+      const localSupTs = Number(localStorage.getItem('gandini-suplementos-ts') || 0);
+      if(suplDoc.exists){
+        const remoteSupl = suplDoc.data();
+        if((remoteSupl._updatedAt || 0) > localSupTs){
+          saveSuplementosList(remoteSupl.list || []);
+        } else if(localSupTs > (remoteSupl._updatedAt || 0)){
+          await fbDb.collection('meta').doc('suplementos').set({ list: localSupl, _updatedAt: localSupTs });
+        }
+      } else {
+        await fbDb.collection('meta').doc('suplementos').set({ list: localSupl, _updatedAt: Date.now() });
+      }
+    }catch(e){ console.error('supplement sync error', e); }
+
+    setSyncStatus(pulled || pushed ? `☁️ Sincronizado (${pulled} recebidos, ${pushed} enviados)` : '☁️ Sincronizado');
+    if(pulled > 0){
+      dayData = await getDayLocal(todayKey);
+      renderAll();
+    }
+  }catch(e){
+    console.error('sync error', e);
+    setSyncStatus('⚠️ Erro ao sincronizar — os dados continuam salvos neste aparelho.');
+  }
+  fbSyncing = false;
+  setTimeout(() => setSyncStatus(''), 5000);
+}
+
+async function getDayLocal(key){
   try{
     const v = localStorage.getItem(`gandini-day:${key}`);
     return v ? JSON.parse(v) : {};
   }catch(e){ return {}; }
 }
+async function getDay(key){
+  return getDayLocal(key);
+}
 async function setDay(key, data){
+  data._updatedAt = Date.now();
   try{ localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data)); }catch(e){ console.error(e); }
+  if(fbReady && fbAuth.currentUser){
+    fbDb.collection('days').doc(key).set(data).catch(e => console.error('firestore write error', e));
+  }
 }
 
 let dayData = {};
