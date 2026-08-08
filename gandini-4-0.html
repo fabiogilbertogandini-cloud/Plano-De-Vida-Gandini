@@ -192,6 +192,8 @@
   .comment-btn{ background:none; border:1px solid var(--border); color:var(--ink-faint); width:22px; height:22px; border-radius:50%;
     font-size:14px; line-height:1; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
   .comment-btn.has{ color:var(--amber); border-color:var(--amber-dim); }
+  .video-btn{ background:none; border:1px solid var(--border); color:var(--ink-faint); width:22px; height:22px; border-radius:50%;
+    font-size:11px; line-height:1; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
   .task-comment-box{ display:none; margin:6px 0 0 36px; }
   .task-comment-box.open{ display:block; }
   .task-comment-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
@@ -905,36 +907,36 @@ const TREINO_GROUP = {
 const WORKOUTS = {
   A: [
     { id:'warmup', pt:'Aquecimento — Esteira, inclinação 5%, 2.5–3.0 MPH (10min)', en:'Warm-up — Treadmill, 5% incline, 2.5–3.0 MPH (10min)', ja:'ウォームアップ — トレッドミル、傾斜5%、2.5–3.0 MPH（10分）' },
-    { id:'ex1', pt:'Agachamento com halter (goblet) — 4x10', en:'Goblet Squat — 4x10', ja:'ゴブレットスクワット — 4x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
-    { id:'ex2', pt:'Supino reto com halteres — 4x10', en:'Dumbbell Bench Press — 4x10', ja:'ダンベルベンチプレス — 4x10', grupoPt:'Peito', grupoEn:'Chest', grupoJa:'胸' },
-    { id:'ex3', pt:'Remada sentada (pulley) — 3x12', en:'Seated Cable Row — 3x12', ja:'シーテッドケーブルロー — 3x12', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中' },
-    { id:'ex4', pt:'Desenvolvimento de ombro com halteres — 3x10', en:'Dumbbell Shoulder Press — 3x10', ja:'ダンベルショルダープレス — 3x10', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩' },
-    { id:'ex5', pt:'Afundo alternado — 3x10 (cada perna)', en:'Walking Lunges — 3x10 (each leg)', ja:'ウォーキングランジ — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
-    { id:'ex6', pt:'Prancha — 3x40s', en:'Plank — 3x40s', ja:'プランク — 3x40秒', grupoPt:'Abdômen (Core)', grupoEn:'Core', grupoJa:'体幹' },
-    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
+    { id:'ex1', pt:'Agachamento com halter (goblet) — 4x10', en:'Goblet Squat — 4x10', ja:'ゴブレットスクワット — 4x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）', video:'https://www.youtube.com/shorts/ZBAd1g1z6qs' },
+    { id:'ex2', pt:'Supino reto com halteres — 4x10', en:'Dumbbell Bench Press — 4x10', ja:'ダンベルベンチプレス — 4x10', grupoPt:'Peito', grupoEn:'Chest', grupoJa:'胸', video:'https://www.youtube.com/shorts/tdYLpdsY3Lw' },
+    { id:'ex3', pt:'Remada sentada (pulley) — 3x12', en:'Seated Cable Row — 3x12', ja:'シーテッドケーブルロー — 3x12', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中', video:'https://www.youtube.com/shorts/8QuMq1GMMng' },
+    { id:'ex4', pt:'Desenvolvimento de ombro com halteres — 3x10', en:'Dumbbell Shoulder Press — 3x10', ja:'ダンベルショルダープレス — 3x10', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩', video:'https://www.youtube.com/shorts/TVlH6LqWeJ8' },
+    { id:'ex5', pt:'Afundo alternado — 3x10 (cada perna)', en:'Walking Lunges — 3x10 (each leg)', ja:'ウォーキングランジ — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）', video:'https://www.youtube.com/watch?v=_GqxkGp7NAA' },
+    { id:'ex6', pt:'Prancha — 3x40s', en:'Plank — 3x40s', ja:'プランク — 3x40秒', grupoPt:'Abdômen (Core)', grupoEn:'Core', grupoJa:'体幹', video:'https://www.youtube.com/shorts/hoeNgjheDHk' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋', video:'https://www.youtube.com/watch?v=8NGXHJ2bEzE' },
     { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
   ],
   B: [
     { id:'warmup', pt:'Aquecimento — Bike (10min)', en:'Warm-up — Bike (10min)', ja:'ウォームアップ — バイク（10分）' },
-    { id:'ex1', pt:'Levantamento terra romeno com halteres — 4x10', en:'Romanian Deadlift — 4x10', ja:'ルーマニアンデッドリフト — 4x10', grupoPt:'Posterior de coxa/Glúteos', grupoEn:'Hamstrings/Glutes', grupoJa:'もも裏・臀筋' },
-    { id:'ex2', pt:'Puxada alta (pulley) — 4x12', en:'Lat Pulldown — 4x12', ja:'ラットプルダウン — 4x12', grupoPt:'Costas (Dorsais/Latíssimo)', grupoEn:'Back (Lats)', grupoJa:'背中（広背筋）' },
-    { id:'ex3', pt:'Fly inclinado (pulley) — 3x12', en:'Incline Cable Fly — 3x12', ja:'インクラインケーブルフライ — 3x12', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）' },
-    { id:'ex4', pt:'Elevação lateral com halteres — 3x12', en:'Lateral Raise — 3x12', ja:'サイドレイズ — 3x12', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩' },
+    { id:'ex1', pt:'Levantamento terra romeno com halteres — 4x10', en:'Romanian Deadlift — 4x10', ja:'ルーマニアンデッドリフト — 4x10', grupoPt:'Posterior de coxa/Glúteos', grupoEn:'Hamstrings/Glutes', grupoJa:'もも裏・臀筋', video:'https://www.youtube.com/shorts/QbbURJEUALw' },
+    { id:'ex2', pt:'Puxada alta (pulley) — 4x12', en:'Lat Pulldown — 4x12', ja:'ラットプルダウン — 4x12', grupoPt:'Costas (Dorsais/Latíssimo)', grupoEn:'Back (Lats)', grupoJa:'背中（広背筋）', video:'https://www.youtube.com/shorts/7jBmlCq5QzQ' },
+    { id:'ex3', pt:'Fly inclinado (pulley) — 3x12', en:'Incline Cable Fly — 3x12', ja:'インクラインケーブルフライ — 3x12', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）', video:'https://www.youtube.com/watch?v=Zj98QV_E7w8' },
+    { id:'ex4', pt:'Elevação lateral com halteres — 3x12', en:'Lateral Raise — 3x12', ja:'サイドレイズ — 3x12', grupoPt:'Ombro', grupoEn:'Shoulders', grupoJa:'肩', video:'https://www.youtube.com/shorts/yuR2ma8f_-k' },
     { id:'ex5', pt:'Tríceps pulley barra reta — 3x12', en:'Triceps Pushdown (straight bar) — 3x12', ja:'トライセプスプッシュダウン（ストレートバー）— 3x12', grupoPt:'Tríceps', grupoEn:'Triceps', grupoJa:'三頭筋',
-      notePt:'Evitar corda — cotovelo esquerdo.', noteEn:'Avoid the rope attachment — left elbow.', noteJa:'ロープアタッチメントは避ける — 左肘のため。' },
-    { id:'ex6', pt:'Elevação de joelhos suspenso — 3x12', en:'Hanging Knee Raise — 3x12', ja:'ハンギングニーレイズ — 3x12', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
-    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋' },
+      notePt:'Evitar corda — cotovelo esquerdo.', noteEn:'Avoid the rope attachment — left elbow.', noteJa:'ロープアタッチメントは避ける — 左肘のため。', video:'https://www.youtube.com/shorts/1FjkhpZsaxc' },
+    { id:'ex6', pt:'Elevação de joelhos suspenso — 3x12', en:'Hanging Knee Raise — 3x12', ja:'ハンギングニーレイズ — 3x12', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋', video:'https://www.youtube.com/watch?v=0BmrlKCfTPU' },
+    { id:'ex7', pt:'Abs na bola — 3x15', en:'Stability Ball Crunch — 3x15', ja:'スタビリティボールクランチ — 3x15', grupoPt:'Abdômen', grupoEn:'Abs', grupoJa:'腹筋', video:'https://www.youtube.com/watch?v=8NGXHJ2bEzE' },
     { id:'cooldown', pt:'Alongamento', en:'Stretching', ja:'ストレッチ' },
   ],
   C: [
     { id:'warmup', pt:'Aquecimento — Esteira em intervalo', en:'Warm-up — Treadmill intervals', ja:'ウォームアップ — トレッドミルインターバル' },
-    { id:'ex1', pt:'Agachamento búlgaro — 3x10 (cada perna)', en:'Bulgarian Split Squat — 3x10 (each leg)', ja:'ブルガリアンスクワット — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）' },
-    { id:'ex2', pt:'Remada curvada com halteres — 4x10', en:'Bent-Over Dumbbell Row — 4x10', ja:'ベントオーバーロー — 4x10', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中' },
-    { id:'ex3', pt:'Supino inclinado com halteres — 3x10', en:'Incline Dumbbell Press — 3x10', ja:'インクラインダンベルプレス — 3x10', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）' },
-    { id:'ex4', pt:'Panturrilha em pé — 4x15', en:'Standing Calf Raise — 4x15', ja:'スタンディングカーフレイズ — 4x15', grupoPt:'Panturrilha', grupoEn:'Calves', grupoJa:'ふくらはぎ' },
+    { id:'ex1', pt:'Agachamento búlgaro — 3x10 (cada perna)', en:'Bulgarian Split Squat — 3x10 (each leg)', ja:'ブルガリアンスクワット — 各脚3x10', grupoPt:'Pernas (Quadríceps/Glúteos)', grupoEn:'Legs (Quads/Glutes)', grupoJa:'脚（大腿四頭筋・臀筋）', video:'https://www.youtube.com/watch?v=DeCnHqrN22U' },
+    { id:'ex2', pt:'Remada curvada com halteres — 4x10', en:'Bent-Over Dumbbell Row — 4x10', ja:'ベントオーバーロー — 4x10', grupoPt:'Costas', grupoEn:'Back', grupoJa:'背中', video:'https://www.youtube.com/shorts/vN8xskk-7G8' },
+    { id:'ex3', pt:'Supino inclinado com halteres — 3x10', en:'Incline Dumbbell Press — 3x10', ja:'インクラインダンベルプレス — 3x10', grupoPt:'Peito (superior)', grupoEn:'Chest (upper)', grupoJa:'胸（上部）', video:'https://www.youtube.com/shorts/8fXfwG4ftaQ' },
+    { id:'ex4', pt:'Panturrilha em pé — 4x15', en:'Standing Calf Raise — 4x15', ja:'スタンディングカーフレイズ — 4x15', grupoPt:'Panturrilha', grupoEn:'Calves', grupoJa:'ふくらはぎ', video:'https://www.youtube.com/shorts/8sT7Ne3Kzwc' },
     { id:'ex5', pt:'Rosca direta com halteres (leve) — 3x12', en:'Dumbbell Bicep Curl (light) — 3x12', ja:'ダンベルバイセップカール（軽め）— 3x12', grupoPt:'Bíceps', grupoEn:'Biceps', grupoJa:'二頭筋',
-      notePt:'Poupar cotovelo esquerdo.', noteEn:'Go easy on the left elbow.', noteJa:'左肘に負担をかけないように。' },
-    { id:'ex6', pt:'Prancha lateral — 3x30s (cada lado)', en:'Side Plank — 3x30s (each side)', ja:'サイドプランク — 各側3x30秒', grupoPt:'Abdômen (Oblíquos)', grupoEn:'Core (Obliques)', grupoJa:'体幹（脇腹）' },
+      notePt:'Poupar cotovelo esquerdo.', noteEn:'Go easy on the left elbow.', noteJa:'左肘に負担をかけないように。', video:'https://www.youtube.com/watch?v=w7hl4IbHMtY' },
+    { id:'ex6', pt:'Prancha lateral — 3x30s (cada lado)', en:'Side Plank — 3x30s (each side)', ja:'サイドプランク — 各側3x30秒', grupoPt:'Abdômen (Oblíquos)', grupoEn:'Core (Obliques)', grupoJa:'体幹（脇腹）', video:'https://www.youtube.com/watch?v=oEs8ZvVDOzI' },
     { id:'cooldown', pt:'Esteira em intervalo (10min) — 2min moderado / 1min forte', en:'Treadmill intervals (10min) — 2min moderate / 1min hard', ja:'トレッドミルインターバル（10分）— 中強度2分／高強度1分' },
   ],
 };
@@ -1100,6 +1102,7 @@ function buildSections(date, lang){
       id: `tr_${ex.id}`,
       label: exLabel(ex, lang) + (exGroup(ex, lang) ? ` [${exGroup(ex, lang)}]` : ''),
       note: exNote(ex, lang),
+      video: ex.video || null,
     }));
     sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra} (${TREINO_GROUP[letra][lang]})`, tasks: exList,
       groupIds: exList.map(e => e.id) });
@@ -1762,12 +1765,16 @@ function renderTaskRow(task, groupIds){
         <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div class="task-label">${task.label}</div>
+      ${task.video ? `<button class="video-btn" type="button" title="Ver execução no YouTube">🎥</button>` : ''}
       <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
     </div>`;
   if(task.note){
     html += `<div class="task-note-inline">${task.note}</div>`;
   }
   row.innerHTML = html;
+  if(task.video){
+    row.querySelector('.video-btn').addEventListener('click', () => window.open(task.video, '_blank'));
+  }
   const checkEl = row.querySelector('.check');
   checkEl.addEventListener('click', () => {
     const current = !!dayData[task.id];
@@ -2033,10 +2040,14 @@ async function renderDayDetail(dateObj){
             <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="task-label">${tk.label}</div>
+          ${tk.video ? `<button class="video-btn" type="button" title="Ver execução no YouTube">🎥</button>` : ''}
           <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
         </div>`;
         if(tk.note) html += `<div class="task-note-inline">${tk.note}</div>`;
         row.innerHTML = html;
+        if(tk.video){
+          row.querySelector('.video-btn').addEventListener('click', () => window.open(tk.video, '_blank'));
+        }
         row.querySelector('.check').addEventListener('click', async () => {
           data[tk.id] = !data[tk.id];
           if(sec.groupIds){
