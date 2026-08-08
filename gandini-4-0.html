@@ -279,7 +279,7 @@
       <div class="lang-btn" id="gcal-btn" onclick="connectGoogleCalendar()" style="min-width:150px;">📅 Google Calendar</div>
       <div class="lang-btn" id="logout-btn" onclick="logoutApp()">🔒 Sair</div>
     </div>
-    <div id="sync-status" style="text-align:center; font-size:11px; color:var(--ink-faint); margin:4px 0 0; min-height:14px;"></div>
+    <div id="sync-status" onclick="document.getElementById('sync-status').textContent='';" style="text-align:center; font-size:13px; color:var(--amber); margin:6px 0 0; min-height:16px; cursor:pointer;"></div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
         <path d="M 15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#262E3A" stroke-width="10" stroke-linecap="round"/>
@@ -1380,17 +1380,18 @@ async function syncFromCloud(){
       }
     }catch(e){ console.error('supplement sync error', e); }
 
-    setSyncStatus(pulled || pushed ? `☁️ Sincronizado (${pulled} recebidos, ${pushed} enviados)` : '☁️ Sincronizado');
+    setSyncStatus(pulled || pushed ? `☁️ Sincronizado (${pulled} recebidos, ${pushed} enviados) — toque pra esconder` : '☁️ Sincronizado — toque pra esconder');
     if(pulled > 0){
       dayData = await getDayLocal(todayKey);
       renderAll();
     }
+    fbSyncing = false;
+    setTimeout(() => setSyncStatus(''), 30000);
   }catch(e){
     console.error('sync error', e);
-    setSyncStatus('⚠️ Erro ao sincronizar — os dados continuam salvos neste aparelho.');
+    setSyncStatus('⚠️ Erro ao sincronizar — os dados continuam salvos neste aparelho. Toque pra esconder.');
+    fbSyncing = false;
   }
-  fbSyncing = false;
-  setTimeout(() => setSyncStatus(''), 5000);
 }
 
 async function getDayLocal(key){
