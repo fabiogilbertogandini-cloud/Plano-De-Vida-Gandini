@@ -1354,15 +1354,24 @@ async function syncFromCloud(){
     }
     // Push any local days that don't exist remotely yet (initial migration) or are newer
     const localDayKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-day:'));
+    let failed = 0;
+    const failedDays = [];
     for(const lk of localDayKeys){
       const dayKey = lk.replace('gandini-day:', '');
       const local = JSON.parse(localStorage.getItem(lk));
       if(!remoteKeys.has(dayKey)){
         local._updatedAt = local._updatedAt || Date.now();
-        await fbDb.collection('days').doc(dayKey).set(local);
-        pushed++;
+        try{
+          await fbDb.collection('days').doc(dayKey).set(local);
+          pushed++;
+        }catch(e){
+          console.error(`firestore push error for ${dayKey}`, e);
+          failed++;
+          failedDays.push(dayKey);
+        }
       }
     }
+    if(failed > 0) console.warn('Dias que falharam ao sincronizar:', failedDays.join(', '));
     // Suplementos list — newest wins by _updatedAt
     try{
       const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
@@ -1380,7 +1389,10 @@ async function syncFromCloud(){
       }
     }catch(e){ console.error('supplement sync error', e); }
 
-    setSyncStatus(pulled || pushed ? `☁️ Sincronizado (${pulled} recebidos, ${pushed} enviados) — toque pra esconder` : '☁️ Sincronizado — toque pra esconder');
+    setSyncStatus(
+      failed > 0 ? `☁️ Sincronizado, mas ${failed} dia(s) falharam (provavelmente por causa de fotos grandes) — toque pra esconder` :
+      (pulled || pushed ? `☁️ Sincronizado (${pulled} recebidos, ${pushed} enviados) — toque pra esconder` : '☁️ Sincronizado — toque pra esconder')
+    );
     if(pulled > 0){
       dayData = await getDayLocal(todayKey);
       renderAll();
