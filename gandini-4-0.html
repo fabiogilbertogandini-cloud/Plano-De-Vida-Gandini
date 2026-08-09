@@ -361,15 +361,16 @@
         <div class="section-body">
           <div class="form-grid">
             <div class="field"><label id="lbl-data">Data</label><input type="date" id="m-data"></div>
-            <div class="field"><label id="lbl-peso">Peso (kg)</label><input type="number" step="0.1" id="m-peso" placeholder="0.0"></div>
-            <div class="field"><label id="lbl-cintura">Cintura (cm)</label><input type="number" step="0.1" id="m-cintura"></div>
-            <div class="field"><label id="lbl-abdomen">Abdômen (cm)</label><input type="number" step="0.1" id="m-abdomen"></div>
+            <div class="field"><label id="lbl-peso">⭐ Peso (kg)</label><input type="number" step="0.1" id="m-peso" placeholder="0.0"></div>
+            <div class="field"><label id="lbl-cintura">⭐ Cintura (cm)</label><input type="number" step="0.1" id="m-cintura"></div>
+            <div class="field"><label id="lbl-abdomen">⭐ Abdômen (cm)</label><input type="number" step="0.1" id="m-abdomen"></div>
             <div class="field"><label id="lbl-quadril">Quadril (cm)</label><input type="number" step="0.1" id="m-quadril"></div>
             <div class="field"><label id="lbl-pescoco">Pescoço (cm)</label><input type="number" step="0.1" id="m-pescoco"></div>
             <div class="field"><label id="lbl-braco">Braço (cm)</label><input type="number" step="0.1" id="m-braco"></div>
             <div class="field"><label id="lbl-coxa">Coxa (cm)</label><input type="number" step="0.1" id="m-coxa"></div>
             <div class="field"><label id="lbl-panturrilha">Panturrilha (cm)</label><input type="number" step="0.1" id="m-panturrilha"></div>
           </div>
+          <div style="font-size:11px; color:var(--ink-faint); margin-top:-4px;" data-k="estrelaNota">⭐ = medidas semanais pedidas pela nutricionista</div>
           <button class="btn-primary" id="btn-salvar" onclick="salvarMedida()">—</button>
           <button class="btn-secondary" id="btn-clear" onclick="limparCamposMedida()">—</button>
           <button class="btn-secondary" id="btn-backup" onclick="exportBackup()">—</button>
@@ -703,7 +704,7 @@ const T = {
     water:{ label:'Água — meta 3.500ml' },
     streak:{ oracao:'Oração', treino:'Treino', suplementos:'Suplementos' },
     week:{ label:'—' },
-    medTitle:'Nova medição', lblData:'Data', lblPeso:'Peso (kg)', lblCintura:'Cintura (cm)', lblAbdomen:'Abdômen (cm)',
+    medTitle:'Nova medição', lblData:'Data', lblPeso:'⭐ Peso (kg)', lblCintura:'⭐ Cintura (cm)', lblAbdomen:'⭐ Abdômen (cm)',
     lblQuadril:'Quadril (cm)', lblPescoco:'Pescoço (cm)', lblBraco:'Braço (cm)', lblCoxa:'Coxa (cm)', lblPanturrilha:'Panturrilha (cm)',
     btnSalvar:'Salvar medição', btnPdf:'Gerar PDF pra nutricionista', btnClear:'Limpar campos', btnBackup:'Exportar backup (JSON)', btnRelatorio:'Gerar PDF do relatório', savedMsg:'Salvo ✓', errMsg:'Erro ao salvar — tenta de novo.',
     scopeDia:'Dia', scopeSemana:'Semana', scopeMes:'Mês', scopeDias:'Selecionar',
@@ -729,7 +730,7 @@ const T = {
     pwModalTitle:'🔒 Confidencial', pwModalOk:'Entrar', pwModalCancel:'Cancelar', pwModalFp:'👆 Usar impressão digital',
     pwModalPlaceholder:'senha', pwModalWrong:'Senha incorreta.', pwModalFpFailed:'Digital não reconhecida — usa a senha.',
     diaDificilOff:'Marcar como dia difícil', diaDificilOn:'Dia difícil — registrado',
-    aguaRegra:'💧 Evite líquidos 20min antes/depois desta refeição',
+    aguaRegra:'💧 Evite líquidos 20min antes/depois desta refeição', estrelaNota:'⭐ = medidas semanais pedidas pela nutricionista',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -773,7 +774,7 @@ const T = {
     water:{ label:'Water — 3,500ml goal' },
     streak:{ oracao:'Prayer', treino:'Workout', suplementos:'Supplements' },
     week:{ label:'—' },
-    medTitle:'New measurement', lblData:'Date', lblPeso:'Weight (kg)', lblCintura:'Waist (cm)', lblAbdomen:'Abdomen (cm)',
+    medTitle:'New measurement', lblData:'Date', lblPeso:'⭐ Weight (kg)', lblCintura:'⭐ Waist (cm)', lblAbdomen:'⭐ Abdomen (cm)',
     lblQuadril:'Hip (cm)', lblPescoco:'Neck (cm)', lblBraco:'Arm (cm)', lblCoxa:'Thigh (cm)', lblPanturrilha:'Calf (cm)',
     btnSalvar:'Save measurement', btnPdf:'Generate PDF for nutritionist', btnClear:'Clear fields', btnBackup:'Export backup (JSON)', btnRelatorio:'Generate report PDF', savedMsg:'Saved ✓', errMsg:'Error saving — try again.',
     scopeDia:'Day', scopeSemana:'Week', scopeMes:'Month', scopeDias:'Select',
@@ -799,7 +800,7 @@ const T = {
     pwModalTitle:'🔒 Confidential', pwModalOk:'Enter', pwModalCancel:'Cancel', pwModalFp:'👆 Use fingerprint',
     pwModalPlaceholder:'password', pwModalWrong:'Wrong password.', pwModalFpFailed:'Fingerprint not recognized — use the password.',
     diaDificilOff:'Mark as a hard day', diaDificilOn:'Hard day — noted',
-    aguaRegra:'💧 Avoid liquids 20min before/after this meal',
+    aguaRegra:'💧 Avoid liquids 20min before/after this meal', estrelaNota:'⭐ = weekly measurements requested by the nutritionist',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -843,7 +844,7 @@ const T = {
     water:{ label:'水分 — 目標3,500ml' },
     streak:{ oracao:'祈り', treino:'トレーニング', suplementos:'サプリメント' },
     week:{ label:'—' },
-    medTitle:'新しい測定', lblData:'日付', lblPeso:'体重 (kg)', lblCintura:'ウエスト (cm)', lblAbdomen:'腹部 (cm)',
+    medTitle:'新しい測定', lblData:'日付', lblPeso:'⭐ 体重 (kg)', lblCintura:'⭐ ウエスト (cm)', lblAbdomen:'⭐ 腹部 (cm)',
     lblQuadril:'ヒップ (cm)', lblPescoco:'首 (cm)', lblBraco:'腕 (cm)', lblCoxa:'太もも (cm)', lblPanturrilha:'ふくらはぎ (cm)',
     btnSalvar:'測定を保存', btnPdf:'栄養士用PDFを作成', btnClear:'フィールドをクリア', btnBackup:'バックアップを書き出す（JSON）', btnRelatorio:'レポートPDFを作成', savedMsg:'保存済み ✓', errMsg:'保存エラー — もう一度お試しください。',
     scopeDia:'日', scopeSemana:'週', scopeMes:'月', scopeDias:'選択',
@@ -869,7 +870,7 @@ const T = {
     pwModalTitle:'🔒 非公開', pwModalOk:'入る', pwModalCancel:'キャンセル', pwModalFp:'👆 指紋を使う',
     pwModalPlaceholder:'パスワード', pwModalWrong:'パスワードが違います。', pwModalFpFailed:'指紋が認識されませんでした — パスワードを使ってください。',
     diaDificilOff:'つらい日として記録', diaDificilOn:'つらい日 — 記録済み',
-    aguaRegra:'💧 この食事の前後20分は水分を控える',
+    aguaRegra:'💧 この食事の前後20分は水分を控える', estrelaNota:'⭐ = 栄養士が指定した毎週の測定項目',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
