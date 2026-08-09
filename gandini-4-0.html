@@ -1933,7 +1933,8 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
       </div>
       <div class="photo-thumbs"></div>`;
   }
-  boxHtml += `<button class="comment-save-btn" type="button">${t.btnSave}</button><span class="comment-saved-msg"></span>`;
+  const initialHasContent = !!(dataObj[commentKey] && dataObj[commentKey].trim()) || (isMeal && !!dataObj[photoKey]);
+  boxHtml += `<button class="comment-save-btn" type="button">${t.btnSave}</button><span class="comment-saved-msg" style="color:var(--ink-faint);">${initialHasContent ? '✓' : ''}</span>`;
   box.innerHTML = boxHtml;
   container.appendChild(box);
 
@@ -2016,7 +2017,15 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
     const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
     if(commentBtn) commentBtn.classList.toggle('has', hasContent);
     savedMsg.textContent = t.savedMsg;
-    setTimeout(() => { savedMsg.textContent = ''; }, 1500);
+    savedMsg.style.color = 'var(--sage)';
+    setTimeout(() => {
+      if(hasContent){
+        savedMsg.textContent = '✓';
+        savedMsg.style.color = 'var(--ink-faint)';
+      } else {
+        savedMsg.textContent = '';
+      }
+    }, 1500);
     if(onSaved) onSaved();
   });
 
