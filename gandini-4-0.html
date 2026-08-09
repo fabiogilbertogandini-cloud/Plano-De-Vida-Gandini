@@ -350,6 +350,12 @@
         <label class="rep-check"><input type="checkbox" id="rep-medidas" checked> <span data-k="repMedidas">Medidas corporais</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-suplementos" checked> <span data-k="repSupl">Suplementos</span></label>
         <label class="rep-check"><input type="checkbox" id="rep-medicamentos"> <span data-k="repMed">🔒 Medicamentos (confidencial)</span></label>
+        <div style="display:flex; gap:8px; margin:10px 0 4px; align-items:center;">
+          <span style="font-size:11px; color:var(--ink-faint);" data-k="repLangLabel">Idioma do PDF:</span>
+          <button class="lang-btn report-lang-btn" data-lang="pt" onclick="setReportLang('pt')" style="padding:4px 10px; font-size:12px;">PT</button>
+          <button class="lang-btn report-lang-btn" data-lang="en" onclick="setReportLang('en')" style="padding:4px 10px; font-size:12px;">EN</button>
+          <button class="lang-btn report-lang-btn" data-lang="ja" onclick="setReportLang('ja')" style="padding:4px 10px; font-size:12px;">日本語</button>
+        </div>
         <button class="btn-secondary" id="btn-relatorio" onclick="gerarRelatorio()">—</button>
         <div id="relatorio-status" style="margin-top:10px; font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--ink-dim); white-space:pre-wrap; word-break:break-word;"></div>
       </div>
@@ -718,7 +724,7 @@ const T = {
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
-    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)',
+    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:',
     logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
     gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
     fpNotSupported:'Esse navegador não suporta login por impressão digital.',
@@ -788,7 +794,7 @@ const T = {
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
-    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)',
+    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:',
     logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
     gcalLoading:'Google is still loading, try again in a few seconds.',
     fpNotSupported:'This browser doesn\'t support fingerprint login.',
@@ -858,7 +864,7 @@ const T = {
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
-    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）',
+    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：',
     logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
     gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
     fpNotSupported:'このブラウザは指紋ログインに対応していません。',
@@ -2218,6 +2224,11 @@ function renderSemanaIfActive(){ if(document.getElementById('view-semana').class
 let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 let calSelectedDate = today;
 let reportScope = 'mes';
+let reportLang = currentLang;
+function setReportLang(lang){
+  reportLang = lang;
+  document.querySelectorAll('.report-lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+}
 const CAL_MAX = new Date(2026, 11, 31);
 
 function navMonth(delta){
@@ -2648,6 +2659,7 @@ function toggleDiaSelecionado(dstr){
 }
 
 function initReportPanel(){
+  setReportLang(currentLang);
   document.querySelectorAll('.scope-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       reportScope = btn.dataset.scope;
@@ -2688,6 +2700,63 @@ const MEAL_LABELS = {
   ceia:{pt:'Ceia', en:'Late snack', ja:'夜食'},
 };
 
+const REPORT_STRINGS = {
+  pt: {
+    semanaDe:'Semana de', diasSelecionados:'dias selecionados', de:'de',
+    horariosRegistrados:'Horários registrados', oracao:'Oração', treinado:'Treinado', naoTreinado:'NÃO TREINADO',
+    treino:'Treino', reposNota:(d)=>`[NÃO TREINADO — reposto no dia ${d}]`, reposFeita:(d)=>`[REPOSIÇÃO do treino do dia ${d}]`,
+    agua:'Água', suplementos:'Suplementos', nenhumSuplemento:'(nenhum suplemento ativo)',
+    medicamentos:'Medicamentos', refeicoes:'Refeições',
+    medidasReg:'Medidas registradas no período:', nenhumaMedicao:'Nenhuma medição registrada.',
+    peso:'peso', cintura:'cintura', abdomen:'abdômen',
+    cronograma:'Cronograma da nutricionista:', pesagem:'Pesagem', consulta:'Consulta',
+    registrada:'(registrada)', pendente:'(pendente — não registrada)', hojeLbl:'(hoje)', upcoming:'(upcoming)',
+    relatorio:'Relatório',
+  },
+  en: {
+    semanaDe:'Week of', diasSelecionados:'selected days', de:'',
+    horariosRegistrados:'Times logged', oracao:'Prayer', treinado:'Trained', naoTreinado:'NOT TRAINED',
+    treino:'Workout', reposNota:(d)=>`[NOT TRAINED — made up on ${d}]`, reposFeita:(d)=>`[MAKE-UP for the workout from ${d}]`,
+    agua:'Water', suplementos:'Supplements', nenhumSuplemento:'(no active supplement)',
+    medicamentos:'Medications', refeicoes:'Meals',
+    medidasReg:'Measurements logged in this period:', nenhumaMedicao:'No measurements logged.',
+    peso:'weight', cintura:'waist', abdomen:'abdomen',
+    cronograma:"Nutritionist's schedule:", pesagem:'Weigh-in', consulta:'Appointment',
+    registrada:'(logged)', pendente:'(pending — not logged)', hojeLbl:'(today)', upcoming:'(upcoming)',
+    relatorio:'Report',
+  },
+  ja: {
+    semanaDe:'週：', diasSelecionados:'日選択', de:'',
+    horariosRegistrados:'記録された時刻', oracao:'祈り', treinado:'実施済み', naoTreinado:'未実施',
+    treino:'トレーニング', reposNota:(d)=>`【未実施 — ${d}に振替】`, reposFeita:(d)=>`【${d}の振替トレーニング】`,
+    agua:'水分', suplementos:'サプリメント', nenhumSuplemento:'（有効なサプリメントなし）',
+    medicamentos:'服薬', refeicoes:'食事',
+    medidasReg:'期間内の測定記録：', nenhumaMedicao:'測定記録なし。',
+    peso:'体重', cintura:'ウエスト', abdomen:'腹部',
+    cronograma:'栄養士のスケジュール：', pesagem:'体重測定', consulta:'診察',
+    registrada:'（記録済み）', pendente:'（未記録）', hojeLbl:'（本日）', upcoming:'（予定）',
+    relatorio:'レポート',
+  },
+};
+
+let jpFontLoaded = false;
+async function loadJapaneseFontIfNeeded(doc, lang){
+  if(lang !== 'ja' || jpFontLoaded) return;
+  const url = 'https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSansJP/unhinted/ttf/NotoSansJP-Regular.ttf';
+  const res = await fetch(url);
+  const buf = await res.arrayBuffer();
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  for(let i = 0; i < bytes.length; i += chunk){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  const base64 = btoa(binary);
+  doc.addFileToVFS('NotoSansJP-Regular.ttf', base64);
+  doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
+  jpFontLoaded = true;
+}
+
 async function gerarRelatorio(){
   const statusEl = document.getElementById('relatorio-status');
   const btnEl = document.getElementById('btn-relatorio');
@@ -2699,6 +2768,7 @@ async function gerarRelatorio(){
       log('⚠ Biblioteca jsPDF não carregada.');
       return;
     }
+    const rl = REPORT_STRINGS[reportLang] || REPORT_STRINGS.pt;
     const incl = {
       refeicoes: document.getElementById('rep-refeicoes').checked,
       espiritual: document.getElementById('rep-espiritual').checked,
@@ -2718,20 +2788,22 @@ async function gerarRelatorio(){
     } else if(reportScope === 'semana'){
       const monday = startOfWeek(calSelectedDate);
       for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
-      titlePeriod = `Semana de ${monday.getDate()}/${monday.getMonth()+1}`;
+      titlePeriod = `${rl.semanaDe} ${monday.getDate()}/${monday.getMonth()+1}`;
     } else if(reportScope === 'dias'){
       if(diasPickerDates.length === 0){ alert(T[currentLang].noDaysSelected); log(''); return; }
       dates = diasPickerDates.map(dstr => { const [y,m,d] = dstr.split('-').map(Number); return new Date(y, m-1, d); });
-      titlePeriod = `${dates.length} dias selecionados`;
+      titlePeriod = `${dates.length} ${rl.diasSelecionados}`;
     } else {
       const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
       for(let d=1; d<=daysInMonth; d++){ dates.push(new Date(calMonth.getFullYear(), calMonth.getMonth(), d)); }
-      titlePeriod = `${MESES.pt[calMonth.getMonth()]} de ${calMonth.getFullYear()}`;
+      titlePeriod = `${MESES[reportLang][calMonth.getMonth()]} ${rl.de} ${calMonth.getFullYear()}`.replace('  ',' ');
     }
     log(`${dates.length} dia(s) a processar. Criando documento PDF...`);
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    log('Carregando fonte...');
+    await loadJapaneseFontIfNeeded(doc, reportLang);
     const pageH = doc.internal.pageSize.height;
     const pageW = doc.internal.pageSize.width;
     let y = 20;
@@ -2752,9 +2824,13 @@ async function gerarRelatorio(){
       doc.setDrawColor(0,0,0);
       doc.setLineWidth(0.2);
     }
+    function setF(style){
+      if(reportLang === 'ja'){ doc.setFont('NotoSansJP','normal'); }
+      else { doc.setFont('helvetica', style); }
+    }
 
-    doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    doc.text(`Gandini 4.0 — Relatório (${titlePeriod})`, 20, y); y += 10;
+    setF('bold'); doc.setFontSize(15);
+    doc.text(`Gandini 4.0 — ${rl.relatorio} (${titlePeriod})`, 20, y); y += 10;
 
     let dayIdx = 0;
     for(const dt of dates){
@@ -2763,12 +2839,12 @@ async function gerarRelatorio(){
       const rec = await getDay(fmtKey(dt));
       const type = getDayType(dt);
       ensureSpace(9);
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
-      doc.text(`${DIAS.pt[dt.getDay()]} ${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`, 20, y);
+      setF('bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
+      doc.text(`${DIAS[reportLang][dt.getDay()]} ${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`, 20, y);
       y += 6;
-      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      setF('normal'); doc.setFontSize(9);
 
-      const daySections = buildSections(dt, 'pt');
+      const daySections = buildSections(dt, reportLang);
       const customTimes = daySections.filter(s => rec[`hora_${s.id}`]).map(s => `${s.title.replace(/\(.*\)/,'').trim()}: ${rec[`hora_${s.id}`]}`);
       daySections.forEach(s => {
         (s.tasks || []).forEach(tk => {
@@ -2777,16 +2853,16 @@ async function gerarRelatorio(){
       });
       if(customTimes.length){
         ensureSpace(6);
-        doc.setFont('helvetica','italic');
-        doc.text(`Horários registrados — ${customTimes.join('  |  ')}`, 24, y);
-        doc.setFont('helvetica','normal');
+        setF('italic');
+        doc.text(`${rl.horariosRegistrados} — ${customTimes.join('  |  ')}`, 24, y);
+        setF('normal');
         y += 5.5;
       }
 
       if(incl.espiritual){
         ensureSpace(6);
-        doc.text(`Oração: ${rec.oracao ? '[X]' : '[ ]'}`, 24, y); y += 5;
-        if(rec.c_oracao){ doc.setFont('helvetica','italic'); wrappedText(`"${rec.c_oracao}"`, 28, pageW - 48, 5); doc.setFont('helvetica','normal'); }
+        doc.text(`${rl.oracao}: ${rec.oracao ? '[X]' : '[ ]'}`, 24, y); y += 5;
+        if(rec.c_oracao){ setF('italic'); wrappedText(`"${rec.c_oracao}"`, 28, pageW - 48, 5); setF('normal'); }
       }
       if(incl.treino && type === 'treino'){
         ensureSpace(7);
@@ -2795,67 +2871,67 @@ async function gerarRelatorio(){
         const exs = WORKOUTS[letraDia] || [];
         const treinado = !!rec.treino;
 
-        // Header-level status: green checkmark if trained, clear "NÃO TREINADO" otherwise
         if(treinado){
           drawCheckmark(24, y - 1.5, 4, 120, 170, 100);
-          doc.setFont('helvetica','bold'); doc.setTextColor(70,120,80);
-          doc.text('Treinado', 30, y);
-          doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+          setF('bold'); doc.setTextColor(70,120,80);
+          doc.text(rl.treinado, 30, y);
+          doc.setTextColor(0,0,0); setF('normal');
         } else if(!rec.reposto_em){
-          doc.setFont('helvetica','bold'); doc.setTextColor(180,90,70);
-          doc.text('NÃO TREINADO', 24, y);
-          doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+          setF('bold'); doc.setTextColor(180,90,70);
+          doc.text(rl.naoTreinado, 24, y);
+          doc.setTextColor(0,0,0); setF('normal');
         }
         y += 6;
 
-        doc.setFont('helvetica','bold'); doc.text(`Treino ${letraDia} (${TREINO_GROUP[letraDia].pt}):`, 24, y); y += 5.5; doc.setFont('helvetica','normal');
+        setF('bold'); doc.text(`${rl.treino} ${letraDia} (${TREINO_GROUP[letraDia][reportLang]}):`, 24, y); y += 5.5; setF('normal');
         exs.forEach(ex => {
           const exId = `tr_${ex.id}`;
           const exDone = rec[exId];
           const exComment = rec[`c_${exId}`];
-          const exGrupo = ex.grupoPt ? ` [${ex.grupoPt}]` : '';
-          wrappedText(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exGrupo}${exComment ? ' — ' + exComment : ''}`, 26, pageW - 46, 5);
+          const grp = exGroup(ex, reportLang);
+          const exGrupo = grp ? ` [${grp}]` : '';
+          wrappedText(`${exDone ? '[X]' : '[ ]'} ${exLabel(ex, reportLang)}${exGrupo}${exComment ? ' — ' + exComment : ''}`, 26, pageW - 46, 5);
         });
         if(rec.reposto_em){
           ensureSpace(6);
-          doc.setFont('helvetica','italic');
-          doc.text(`[NAO TREINADO — reposto no dia ${fmtKeyDisplay(rec.reposto_em)}]`, 26, y);
-          doc.setFont('helvetica','normal');
+          setF('italic');
+          doc.text(rl.reposNota(fmtKeyDisplay(rec.reposto_em)), 26, y);
+          setF('normal');
           y += 5;
         }
         if(rec.reposicao_de){
           ensureSpace(6);
           drawCheckmark(26, y - 1.5, 3.5, 120, 170, 100);
-          doc.setFont('helvetica','italic');
-          doc.text(`  [REPOSIÇÃO do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}]`, 26, y);
-          doc.setFont('helvetica','normal');
+          setF('italic');
+          doc.text(`  ${rl.reposFeita(fmtKeyDisplay(rec.reposicao_de))}`, 26, y);
+          setF('normal');
           y += 5;
         }
       }
       if(incl.agua){
         ensureSpace(6);
-        doc.text(`Água: ${rec.agua_ml||0} / 3500ml`, 24, y); y += 5;
-        if(rec.c_agua){ doc.setFont('helvetica','italic'); wrappedText(`"${rec.c_agua}"`, 28, pageW - 48, 5); doc.setFont('helvetica','normal'); }
+        doc.text(`${rl.agua}: ${rec.agua_ml||0} / 3500ml`, 24, y); y += 5;
+        if(rec.c_agua){ setF('italic'); wrappedText(`"${rec.c_agua}"`, 28, pageW - 48, 5); setF('normal'); }
       }
       if(incl.suplementos){
         ensureSpace(6);
         const suplList = getSuplementosList().filter(s => s.ativo);
         const suplTxt = suplList.length
           ? suplList.map(s => `${s.nome}:${rec[s.id] ? 'X' : '-'}`).join('  ')
-          : '(nenhum suplemento ativo)';
-        doc.text(`Suplementos — ${suplTxt}`, 24, y);
+          : rl.nenhumSuplemento;
+        doc.text(`${rl.suplementos} — ${suplTxt}`, 24, y);
         y += 5;
       }
       if(incl.medicamentos){
         ensureSpace(6);
-        doc.text(`Medicamentos — Fluoxetine:${rec.fluoxetine?'X':'-'} Anfetamina:${rec.anfetamina?'X':'-'}`, 24, y);
+        doc.text(`${rl.medicamentos} — Fluoxetine:${rec.fluoxetine?'X':'-'} Anfetamina:${rec.anfetamina?'X':'-'}`, 24, y);
         y += 5;
       }
       if(incl.refeicoes){
         ensureSpace(6);
-        doc.setFont('helvetica','bold'); doc.text('Refeições:', 24, y); y += 5.5; doc.setFont('helvetica','normal');
+        setF('bold'); doc.text(`${rl.refeicoes}:`, 24, y); y += 5.5; setF('normal');
         for(const mealId of MEAL_TASK_IDS){
-          const label = MEAL_LABELS[mealId].pt;
+          const label = MEAL_LABELS[mealId][reportLang];
           const done = rec[mealId];
           const comment = rec[`c_${mealId}`];
           const photos = getPhotosArr(rec, `p_${mealId}`);
@@ -2882,21 +2958,20 @@ async function gerarRelatorio(){
 
     if(incl.medidas){
       ensureSpace(10);
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Medidas registradas no período:', 20, y); y += 7;
-      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      setF('bold'); doc.setFontSize(10); doc.text(rl.medidasReg, 20, y); y += 7;
+      setF('normal'); doc.setFontSize(9);
       const allMedidas = await getAllHistorico();
       const dateKeys = new Set(dates.map(d => fmtKey(d)));
       const inRange = allMedidas.filter(e => dateKeys.has(e.data));
-      if(inRange.length === 0){ ensureSpace(6); doc.text('Nenhuma medição registrada.', 20, y); y += 6; }
+      if(inRange.length === 0){ ensureSpace(6); doc.text(rl.nenhumaMedicao, 20, y); y += 6; }
       else{
         inRange.forEach(e => {
           ensureSpace(6);
-          doc.text(`${e.data} — peso: ${e.peso||'—'}kg, cintura: ${e.cintura||'—'}cm, abdômen: ${e.abdomen||'—'}cm`, 20, y);
+          doc.text(`${e.data} — ${rl.peso}: ${e.peso||'—'}kg, ${rl.cintura}: ${e.cintura||'—'}cm, ${rl.abdomen}: ${e.abdomen||'—'}cm`, 20, y);
           y += 5.5;
         });
       }
 
-      // Nutritionist's official weigh-in schedule
       const NUTRI_SCHEDULE = [
         { data:'2026-07-31', tipo:'pesagem' },
         { data:'2026-08-07', tipo:'pesagem' },
@@ -2908,16 +2983,16 @@ async function gerarRelatorio(){
       const allMedidasKeys = new Set(allMedidas.map(e => e.data));
       y += 3;
       ensureSpace(8);
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Cronograma da nutricionista:', 20, y); y += 7;
-      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      setF('bold'); doc.setFontSize(10); doc.text(rl.cronograma, 20, y); y += 7;
+      setF('normal'); doc.setFontSize(9);
       NUTRI_SCHEDULE.forEach(s => {
         ensureSpace(6);
-        const label = s.tipo === 'consulta' ? 'Consulta' : 'Pesagem';
+        const label = s.tipo === 'consulta' ? rl.consulta : rl.pesagem;
         let status;
-        if(allMedidasKeys.has(s.data)) status = '(registrada)';
-        else if(s.data < todayKeyNow) status = '(pendente — não registrada)';
-        else if(s.data === todayKeyNow) status = '(hoje)';
-        else status = '(upcoming)';
+        if(allMedidasKeys.has(s.data)) status = rl.registrada;
+        else if(s.data < todayKeyNow) status = rl.pendente;
+        else if(s.data === todayKeyNow) status = rl.hojeLbl;
+        else status = rl.upcoming;
         doc.text(`${fmtKeyDisplay(s.data)} — ${label} ${status}`, 20, y);
         y += 5.5;
       });
@@ -2934,7 +3009,7 @@ async function gerarRelatorio(){
     }
 
     log('Salvando arquivo PDF...');
-    doc.save(`gandini-relatorio-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.pdf`);
+    doc.save(`gandini-relatorio-${reportLang}-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.pdf`);
     log('✅ PDF gerado com sucesso!');
     setTimeout(() => { if(statusEl && statusEl.textContent.startsWith('✅')) log(''); }, 6000);
   }catch(e){
