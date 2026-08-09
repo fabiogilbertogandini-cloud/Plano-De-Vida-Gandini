@@ -2809,10 +2809,24 @@ async function gerarRelatorio(){
     let y = 20;
     function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
     function wrappedText(text, x, maxWidth, lineHeight){
-      const lines = doc.splitTextToSize(text, maxWidth);
-      lines.forEach(line => {
+      const words = String(text).split(' ');
+      const lines = [];
+      let line = '';
+      words.forEach(w => {
+        const test = line ? line + ' ' + w : w;
+        let width;
+        try{ width = doc.getTextWidth(test); }catch(e){ width = test.length * 2; }
+        if(width > maxWidth && line){
+          lines.push(line);
+          line = w;
+        } else {
+          line = test;
+        }
+      });
+      if(line) lines.push(line);
+      lines.forEach(l => {
         ensureSpace(lineHeight);
-        doc.text(line, x, y);
+        doc.text(l, x, y);
         y += lineHeight;
       });
     }
