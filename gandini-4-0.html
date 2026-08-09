@@ -1203,7 +1203,7 @@ function buildSections(date, lang){
   }
 
   const dormirLabel = wd === 5 ? t.task.dormirFlex : (type === 'treino' ? t.task.dormir23 : t.task.dormirSimples);
-  sections.push({ id:'winddown', time:'', title:t.sec.winddown, tasks:[
+  sections.push({ id:'winddown', time:'22h', title:t.sec.winddown, tasks:[
     {id:'winddown', label:t.task.winddown},
     {id:'dormir', label: dormirLabel},
   ]});
