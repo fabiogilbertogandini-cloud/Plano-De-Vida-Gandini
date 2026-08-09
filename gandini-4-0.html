@@ -296,6 +296,7 @@
       <div class="arc-label" id="arc-label-txt">of day</div>
     </div>
     <div class="verse" id="verse-txt">—</div>
+    <div id="dia-dificil-wrap" style="text-align:center; margin-top:8px;"></div>
   </header>
 
   <div class="tabs">
@@ -727,6 +728,7 @@ const T = {
     reportGenError:'Erro ao gerar relatório.',
     pwModalTitle:'🔒 Confidencial', pwModalOk:'Entrar', pwModalCancel:'Cancelar', pwModalFp:'👆 Usar impressão digital',
     pwModalPlaceholder:'senha', pwModalWrong:'Senha incorreta.', pwModalFpFailed:'Digital não reconhecida — usa a senha.',
+    diaDificilOff:'Marcar como dia difícil', diaDificilOn:'Dia difícil — registrado',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -795,6 +797,7 @@ const T = {
     reportGenError:'Error generating report.',
     pwModalTitle:'🔒 Confidential', pwModalOk:'Enter', pwModalCancel:'Cancel', pwModalFp:'👆 Use fingerprint',
     pwModalPlaceholder:'password', pwModalWrong:'Wrong password.', pwModalFpFailed:'Fingerprint not recognized — use the password.',
+    diaDificilOff:'Mark as a hard day', diaDificilOn:'Hard day — noted',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -863,6 +866,7 @@ const T = {
     reportGenError:'レポートの作成に失敗しました。',
     pwModalTitle:'🔒 非公開', pwModalOk:'入る', pwModalCancel:'キャンセル', pwModalFp:'👆 指紋を使う',
     pwModalPlaceholder:'パスワード', pwModalWrong:'パスワードが違います。', pwModalFpFailed:'指紋が認識されませんでした — パスワードを使ってください。',
+    diaDificilOff:'つらい日として記録', diaDificilOn:'つらい日 — 記録済み',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
@@ -1583,6 +1587,23 @@ function renderDateHeader(dateObj, dayType){
   document.getElementById('daytype-title').textContent = t.dayType[dayType];
 }
 
+async function renderDiaDificilToggle(dateObj, dataOverride, rerenderFn){
+  const t = T[currentLang];
+  const key = fmtKey(dateObj);
+  const data = dataOverride || await getDay(key);
+  const wrap = document.getElementById('dia-dificil-wrap');
+  if(!wrap) return;
+  const active = !!data.dia_dificil;
+  wrap.innerHTML = `<button id="dia-dificil-btn" style="background:${active ? 'var(--coral)' : 'var(--surface-2)'}; color:${active ? '#fff' : 'var(--ink-faint)'}; border:1px solid ${active ? 'var(--coral)' : 'var(--border)'}; border-radius:20px; padding:6px 14px; font-size:12px; cursor:pointer;">${active ? '💜 ' + t.diaDificilOn : t.diaDificilOff}</button>`;
+  document.getElementById('dia-dificil-btn').addEventListener('click', async () => {
+    const fresh = await getDay(key);
+    fresh.dia_dificil = !fresh.dia_dificil;
+    await setDay(key, fresh);
+    if(key === todayKey) dayData = fresh;
+    if(rerenderFn) rerenderFn(); else renderDiaDificilToggle(dateObj, fresh, rerenderFn);
+  });
+}
+
 /* ---------------- RENDER HOJE ---------------- */
 async function renderHoje(){
   const t = T[currentLang];
@@ -1590,6 +1611,7 @@ async function renderHoje(){
   const container = document.getElementById('hoje-content');
   container.innerHTML = '';
   container.classList.remove('loading');
+  renderDiaDificilToggle(today, dayData, renderHoje);
 
   sections.forEach(sec => {
     const box = document.createElement('div');
@@ -2208,6 +2230,7 @@ async function renderDayDetail(dateObj){
   const data = await getDay(key);
   renderDateHeader(dateObj, getDayType(dateObj));
   updateArcFor(dateObj, data);
+  renderDiaDificilToggle(dateObj, data, () => renderDayDetail(dateObj));
   const sections = buildSections(dateObj, currentLang);
   const container = document.getElementById('cal-detail');
   container.innerHTML = '';
@@ -2365,6 +2388,7 @@ async function renderSemana(){
       d.setDate(today.getDate() - i);
       if(d < LAUNCH_DATE) break;
       const dt = i===0 ? dayData : await getDay(fmtKey(d));
+      if(dt.dia_dificil) continue;
       const type = getDayType(d);
       let ok;
       if(cat.key === 'treino'){
