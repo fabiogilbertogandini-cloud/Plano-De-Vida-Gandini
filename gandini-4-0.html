@@ -1161,17 +1161,17 @@ function buildSections(date, lang){
   }
 
   const refeicaoTasks = [
-    {id:'cafe', label:t.task.cafe, note:`${t.task.graca} • ${t.task.aguaRegra}`},
-    {id:'lancheManha', label:t.task.lancheManha, note:t.task.aguaRegra},
-    {id:'almoco', label:t.task.almoco, note:t.task.aguaRegra},
+    {id:'cafe', label:t.task.cafe, note:`${t.task.graca} • ${t.task.aguaRegra}`, time:'07h'},
+    {id:'lancheManha', label:t.task.lancheManha, note:t.task.aguaRegra, time:'09h30'},
+    {id:'almoco', label:t.task.almoco, note:t.task.aguaRegra, time:'12h'},
   ];
   if(wd !== 0 && wd !== 6){
     refeicaoTasks.push({id:'catalogue', label:t.task.catalogue});
   }
   refeicaoTasks.push(
-    {id:'lancheTarde', label:t.task.lancheTarde, note:t.task.aguaRegra},
-    {id:'jantar', label:t.task.jantar, note:`${t.task.graca} • ${t.task.aguaRegra}`},
-    {id:'ceia', label:t.task.ceia, note:t.task.aguaRegra},
+    {id:'lancheTarde', label:t.task.lancheTarde, note:t.task.aguaRegra, time:'15h'},
+    {id:'jantar', label:t.task.jantar, note:`${t.task.graca} • ${t.task.aguaRegra}`, time:'18h'},
+    {id:'ceia', label:t.task.ceia, note:t.task.aguaRegra, time:'20h'},
   );
   sections.push({ id:'refeicoes', time:'', title:t.sec.refeicoes, tasks:refeicaoTasks });
 
@@ -1530,6 +1530,7 @@ async function setDay(key, data){
 }
 
 let dayData = {};
+let recuperacaoOpen = false;
 let medUnlocked = false; // resets every page load — Medicamentos section stays locked until password is entered this session
 
 async function initApp(){
@@ -1761,11 +1762,12 @@ async function renderHoje(){
       box.innerHTML = `<div class="section-head" id="recuperacao-head" style="cursor:pointer;user-select:none;"><div class="st"><span class="section-title">${t.sec.recuperacao}</span></div><span class="time" id="recuperacao-arrow">▸</span></div>`;
       const body = document.createElement('div');
       body.className = 'section-body';
-      body.style.display = 'none';
+      body.style.display = recuperacaoOpen ? 'block' : 'none';
+      box.querySelector('#recuperacao-arrow').textContent = recuperacaoOpen ? '▾' : '▸';
       box.querySelector('#recuperacao-head').addEventListener('click', () => {
-        const open = body.style.display !== 'none';
-        body.style.display = open ? 'none' : 'block';
-        box.querySelector('#recuperacao-arrow').textContent = open ? '▸' : '▾';
+        recuperacaoOpen = body.style.display === 'none';
+        body.style.display = recuperacaoOpen ? 'block' : 'none';
+        box.querySelector('#recuperacao-arrow').textContent = recuperacaoOpen ? '▾' : '▸';
       });
 
       for(const r of pending){
@@ -2091,6 +2093,9 @@ function renderTaskRow(task, groupIds){
     html += `<div class="task-note-inline">${task.note}</div>`;
   }
   row.innerHTML = html;
+  if(task.time){
+    attachTimeEditor(row.querySelector('.task-row-main'), task, dayData, todayKey, renderHoje);
+  }
   if(task.video){
     row.querySelector('.video-btn').addEventListener('click', () => window.open(task.video, '_blank'));
   }
@@ -2365,6 +2370,9 @@ async function renderDayDetail(dateObj){
         </div>`;
         if(tk.note) html += `<div class="task-note-inline">${tk.note}</div>`;
         row.innerHTML = html;
+        if(tk.time){
+          attachTimeEditor(row.querySelector('.task-row-main'), tk, data, key, () => renderDayDetail(dateObj));
+        }
         if(tk.video){
           row.querySelector('.video-btn').addEventListener('click', () => window.open(tk.video, '_blank'));
         }
@@ -2716,6 +2724,14 @@ async function gerarRelatorio(){
     const pageW = doc.internal.pageSize.width;
     let y = 20;
     function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
+    function wrappedText(text, x, maxWidth, lineHeight){
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach(line => {
+        ensureSpace(lineHeight);
+        doc.text(line, x, y);
+        y += lineHeight;
+      });
+    }
 
     doc.setFont('helvetica','bold'); doc.setFontSize(15);
     doc.text(`Gandini 4.0 — Relatório (${titlePeriod})`, 20, y); y += 10;
@@ -2734,6 +2750,11 @@ async function gerarRelatorio(){
 
       const daySections = buildSections(dt, 'pt');
       const customTimes = daySections.filter(s => rec[`hora_${s.id}`]).map(s => `${s.title.replace(/\(.*\)/,'').trim()}: ${rec[`hora_${s.id}`]}`);
+      daySections.forEach(s => {
+        (s.tasks || []).forEach(tk => {
+          if(rec[`hora_${tk.id}`]) customTimes.push(`${tk.label}: ${rec[`hora_${tk.id}`]}`);
+        });
+      });
       if(customTimes.length){
         ensureSpace(6);
         doc.setFont('helvetica','italic');
@@ -2745,7 +2766,7 @@ async function gerarRelatorio(){
       if(incl.espiritual){
         ensureSpace(6);
         doc.text(`Oração: ${rec.oracao ? '[X]' : '[ ]'}`, 24, y); y += 5;
-        if(rec.c_oracao){ ensureSpace(6); doc.setFont('helvetica','italic'); doc.text(`"${rec.c_oracao}"`, 28, y); doc.setFont('helvetica','normal'); y += 5; }
+        if(rec.c_oracao){ doc.setFont('helvetica','italic'); wrappedText(`"${rec.c_oracao}"`, 28, pageW - 48, 5); doc.setFont('helvetica','normal'); }
       }
       if(incl.treino && type === 'treino'){
         ensureSpace(6);
@@ -2758,21 +2779,19 @@ async function gerarRelatorio(){
           const exDone = rec[exId];
           const exComment = rec[`c_${exId}`];
           const exGrupo = ex.grupoPt ? ` [${ex.grupoPt}]` : '';
-          ensureSpace(6);
-          doc.text(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exGrupo}${exComment ? ' — ' + exComment : ''}`, 26, y);
-          y += 5;
+          wrappedText(`${exDone ? '[X]' : '[ ]'} ${ex.pt}${exGrupo}${exComment ? ' — ' + exComment : ''}`, 26, pageW - 46, 5);
         });
         if(rec.reposto_em){
           ensureSpace(6);
           doc.setFont('helvetica','italic');
-          doc.text(`⚠ Não treinado — porém, reposto no dia ${fmtKeyDisplay(rec.reposto_em)}`, 26, y);
+          doc.text(`[NAO TREINADO — reposto no dia ${fmtKeyDisplay(rec.reposto_em)}]`, 26, y);
           doc.setFont('helvetica','normal');
           y += 5;
         }
         if(rec.reposicao_de){
           ensureSpace(6);
           doc.setFont('helvetica','italic');
-          doc.text(`🔁 Reposição do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}`, 26, y);
+          doc.text(`[REPOSIÇÃO do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}]`, 26, y);
           doc.setFont('helvetica','normal');
           y += 5;
         }
@@ -2780,7 +2799,7 @@ async function gerarRelatorio(){
       if(incl.agua){
         ensureSpace(6);
         doc.text(`Água: ${rec.agua_ml||0} / 3500ml`, 24, y); y += 5;
-        if(rec.c_agua){ ensureSpace(6); doc.setFont('helvetica','italic'); doc.text(`"${rec.c_agua}"`, 28, y); doc.setFont('helvetica','normal'); y += 5; }
+        if(rec.c_agua){ doc.setFont('helvetica','italic'); wrappedText(`"${rec.c_agua}"`, 28, pageW - 48, 5); doc.setFont('helvetica','normal'); }
       }
       if(incl.suplementos){
         ensureSpace(6);
@@ -2805,8 +2824,7 @@ async function gerarRelatorio(){
           const comment = rec[`c_${mealId}`];
           const photos = getPhotosArr(rec, `p_${mealId}`);
           ensureSpace(photos.length ? 80 : 6);
-          doc.text(`${done ? '[X]' : '[ ]'} ${label}${comment ? ' — ' + comment : ''}`, 26, y);
-          y += 5.5;
+          wrappedText(`${done ? '[X]' : '[ ]'} ${label}${comment ? ' — ' + comment : ''}`, 26, pageW - 46, 5.5);
           if(photos.length){
             let px = 26;
             photos.forEach(photo => {
@@ -2820,6 +2838,10 @@ async function gerarRelatorio(){
         }
       }
       y += 4;
+      ensureSpace(4);
+      doc.setDrawColor(220,220,220);
+      doc.line(20, y - 2, pageW - 20, y - 2);
+      doc.setDrawColor(0,0,0);
     }
 
     if(incl.medidas){
@@ -2922,12 +2944,12 @@ async function renderHistorico(){
       el.innerHTML = `<div style="color:var(--ink-faint);font-size:13px;">${t.noHistory}</div>`;
       return;
     }
-    const chartHtml = renderWeightChartSVG(entries);
+    const chartHtml = renderMedidasChartSVG(entries);
     el.innerHTML = chartHtml + entries.map(e => `
       <div class="history-item">
         <span class="history-date">${e.data}</span>
         <span style="display:flex;align-items:center;gap:8px;">
-          ${e.peso ? e.peso+'kg' : '—'} · ${T[currentLang].lblCintura.split(' ')[0]} ${e.cintura||'—'}cm
+          ${e.peso ? e.peso+'kg' : '—'} · C ${e.cintura||'—'}cm · A ${e.abdomen||'—'}cm
           <button class="q-del" onclick="deletarMedida('${e.data}')">×</button>
         </span>
       </div>
@@ -2937,32 +2959,53 @@ async function renderHistorico(){
   }
 }
 
-function renderWeightChartSVG(entries){
-  const pts = entries.filter(e => e.peso && !isNaN(parseFloat(e.peso)))
-    .map(e => ({ date: e.data, peso: parseFloat(e.peso) }))
-    .sort((a,b) => a.date.localeCompare(b.date));
-  if(pts.length < 2) return '';
-  const W = 600, H = 160, padL = 40, padR = 16, padT = 16, padB = 24;
-  const weights = pts.map(p => p.peso);
-  let min = Math.min(...weights), max = Math.max(...weights);
-  if(min === max){ min -= 1; max += 1; }
-  const range = max - min;
-  const x = i => padL + (i / (pts.length - 1)) * (W - padL - padR);
-  const y = w => padT + (1 - (w - min) / range) * (H - padT - padB);
-  const linePath = pts.map((p,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${y(p.peso).toFixed(1)}`).join(' ');
-  const dots = pts.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.peso).toFixed(1)}" r="3.5" fill="var(--amber)" />`).join('');
-  const firstLast = `<text x="${padL}" y="${H-4}" font-size="10" fill="var(--ink-faint)">${pts[0].date.slice(5)}</text>
-    <text x="${W-padR}" y="${H-4}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${pts[pts.length-1].date.slice(5)}</text>`;
-  const minMaxLabel = `<text x="${padL-4}" y="${y(max).toFixed(1)}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${max}kg</text>
-    <text x="${padL-4}" y="${y(min).toFixed(1)}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${min}kg</text>`;
+function renderMedidasChartSVG(entries){
+  const series = [
+    { key:'peso', label:'Peso', unit:'kg', color:'#D6A75A' },
+    { key:'cintura', label:'Cintura', unit:'cm', color:'#7FA88A' },
+    { key:'abdomen', label:'Abdômen', unit:'cm', color:'#5AA9E6' },
+  ];
+  const sorted = entries.slice().sort((a,b) => a.data.localeCompare(b.data));
+  const usable = series.map(s => {
+    const pts = sorted
+      .map((e,i) => ({ i, date:e.data, val: parseFloat(e[s.key]) }))
+      .filter(p => !isNaN(p.val));
+    return { ...s, pts };
+  }).filter(s => s.pts.length >= 2);
+
+  if(usable.length === 0) return '';
+
+  const W = 600, H = 180, padL = 16, padR = 16, padT = 16, padB = 24;
+  const nDates = sorted.length;
+  const x = i => padL + (nDates <= 1 ? 0 : (i / (nDates - 1)) * (W - padL - padR));
+
+  let svgLines = '';
+  let legend = '';
+  usable.forEach(s => {
+    const vals = s.pts.map(p => p.val);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if(min === max){ min -= 1; max += 1; }
+    const range = max - min;
+    const y = v => padT + (1 - (v - min) / range) * (H - padT - padB);
+    const path = s.pts.map((p,idx) => `${idx===0?'M':'L'} ${x(p.i).toFixed(1)} ${y(p.val).toFixed(1)}`).join(' ');
+    const dots = s.pts.map(p => `<circle cx="${x(p.i).toFixed(1)}" cy="${y(p.val).toFixed(1)}" r="3" fill="${s.color}" />`).join('');
+    svgLines += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="2"/>${dots}`;
+    const latest = s.pts[s.pts.length-1].val;
+    legend += `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:11px;color:var(--ink-dim);">
+      <span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;"></span>
+      ${s.label}: ${latest}${s.unit}
+    </span>`;
+  });
+
+  const firstLast = `<text x="${padL}" y="${H-4}" font-size="10" fill="var(--ink-faint)">${sorted[0].data.slice(5)}</text>
+    <text x="${W-padR}" y="${H-4}" font-size="10" fill="var(--ink-faint)" text-anchor="end">${sorted[sorted.length-1].data.slice(5)}</text>`;
+
   return `<div style="margin-bottom:14px; background:var(--surface-2); border-radius:10px; padding:10px;">
+    <div style="margin-bottom:6px;">${legend}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
-      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>
       <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>
-      <path d="${linePath}" fill="none" stroke="var(--amber)" stroke-width="2"/>
-      ${dots}
+      ${svgLines}
       ${firstLast}
-      ${minMaxLabel}
     </svg>
   </div>`;
 }
