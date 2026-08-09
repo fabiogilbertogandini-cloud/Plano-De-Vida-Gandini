@@ -2895,6 +2895,32 @@ async function gerarRelatorio(){
           y += 5.5;
         });
       }
+
+      // Nutritionist's official weigh-in schedule
+      const NUTRI_SCHEDULE = [
+        { data:'2026-07-31', tipo:'pesagem' },
+        { data:'2026-08-07', tipo:'pesagem' },
+        { data:'2026-08-14', tipo:'pesagem' },
+        { data:'2026-08-21', tipo:'pesagem' },
+        { data:'2026-08-26', tipo:'consulta' },
+      ];
+      const todayKeyNow = fmtKey(today);
+      const allMedidasKeys = new Set(allMedidas.map(e => e.data));
+      y += 3;
+      ensureSpace(8);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Cronograma da nutricionista:', 20, y); y += 7;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      NUTRI_SCHEDULE.forEach(s => {
+        ensureSpace(6);
+        const label = s.tipo === 'consulta' ? 'Consulta' : 'Pesagem';
+        let status;
+        if(allMedidasKeys.has(s.data)) status = '(registrada)';
+        else if(s.data < todayKeyNow) status = '(pendente — não registrada)';
+        else if(s.data === todayKeyNow) status = '(hoje)';
+        else status = '(upcoming)';
+        doc.text(`${fmtKeyDisplay(s.data)} — ${label} ${status}`, 20, y);
+        y += 5.5;
+      });
     }
 
     log('Montando numeração de páginas...');
