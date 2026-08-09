@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <style>
@@ -506,6 +507,7 @@ function unlockApp(password){
   (async () => {
     if(password) await firebaseSignInWithPassword(password);
     await syncFromCloud();
+    await setupPushNotifications();
   })();
 }
 
@@ -1332,6 +1334,37 @@ async function firebaseSignInWithPassword(password){
     console.error('Firebase sign-in error', e);
     return false;
   }
+}
+
+const FCM_VAPID_KEY = "BJBaF0kQOGieqSV4MPh3BdH1LkZLw9yfSAIf283deqQeQVXHhMeaXvQKjMGINVGQvstp1eaNk3iZ46Og77eKmSI";
+let fbMessaging = null;
+
+async function setupPushNotifications(){
+  if(!fbReady || !fbAuth.currentUser) return;
+  if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  try{
+    let permission = Notification.permission;
+    if(permission === 'default'){
+      permission = await Notification.requestPermission();
+    }
+    if(permission !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    fbMessaging = firebase.messaging();
+    const token = await fbMessaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
+    if(token){
+      await fbDb.collection('fcmTokens').doc(token).set({
+        token, updatedAt: Date.now(), lang: currentLang,
+        ua: navigator.userAgent.slice(0, 120),
+      });
+    }
+    fbMessaging.onMessage((payload) => {
+      const title = payload.notification?.title || 'Gandini 4.0';
+      const body = payload.notification?.body || '';
+      setSyncStatus(`🔔 ${title} — ${body}`);
+      setTimeout(() => setSyncStatus(''), 8000);
+    });
+  }catch(e){ console.error('push setup error', e); }
 }
 
 async function syncFromCloud(){
