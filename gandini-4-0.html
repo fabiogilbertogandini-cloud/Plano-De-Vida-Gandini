@@ -729,6 +729,7 @@ const T = {
     pwModalTitle:'🔒 Confidencial', pwModalOk:'Entrar', pwModalCancel:'Cancelar', pwModalFp:'👆 Usar impressão digital',
     pwModalPlaceholder:'senha', pwModalWrong:'Senha incorreta.', pwModalFpFailed:'Digital não reconhecida — usa a senha.',
     diaDificilOff:'Marcar como dia difícil', diaDificilOn:'Dia difícil — registrado',
+    aguaRegra:'💧 Evite líquidos 20min antes/depois desta refeição',
     backupNever:'Você ainda não fez nenhum backup — clique acima pra fazer o primeiro.', backupToday:'Backup feito hoje ✓', backupDaysAgo:'Último backup há', backupOverdue:'⚠ Já faz', backupDay:'dia', backupDays:'dias',
     commentPlaceholder:'comentário...', photoBtn:'Foto', removePhoto:'remover', btnSave:'Salvar',
     lembreteTitle:'Lembrete — próxima consulta agendada', btnLembreteSave:'Salvar lembrete', lembreteSaved:'Salvo ✓',
@@ -798,6 +799,7 @@ const T = {
     pwModalTitle:'🔒 Confidential', pwModalOk:'Enter', pwModalCancel:'Cancel', pwModalFp:'👆 Use fingerprint',
     pwModalPlaceholder:'password', pwModalWrong:'Wrong password.', pwModalFpFailed:'Fingerprint not recognized — use the password.',
     diaDificilOff:'Mark as a hard day', diaDificilOn:'Hard day — noted',
+    aguaRegra:'💧 Avoid liquids 20min before/after this meal',
     backupNever:"You haven't made a backup yet — click above to make your first one.", backupToday:'Backup done today ✓', backupDaysAgo:'Last backup:', backupOverdue:'⚠ It has been', backupDay:'day ago', backupDays:'days ago',
     commentPlaceholder:'comment...', photoBtn:'Photo', removePhoto:'remove', btnSave:'Save',
     lembreteTitle:'Reminder — next scheduled appointment', btnLembreteSave:'Save reminder', lembreteSaved:'Saved ✓',
@@ -867,6 +869,7 @@ const T = {
     pwModalTitle:'🔒 非公開', pwModalOk:'入る', pwModalCancel:'キャンセル', pwModalFp:'👆 指紋を使う',
     pwModalPlaceholder:'パスワード', pwModalWrong:'パスワードが違います。', pwModalFpFailed:'指紋が認識されませんでした — パスワードを使ってください。',
     diaDificilOff:'つらい日として記録', diaDificilOn:'つらい日 — 記録済み',
+    aguaRegra:'💧 この食事の前後20分は水分を控える',
     backupNever:'まだバックアップを作成していません — 上のボタンで最初のバックアップを作成しましょう。', backupToday:'今日バックアップ済み ✓', backupDaysAgo:'最終バックアップ：', backupOverdue:'⚠ 最終バックアップから', backupDay:'日経過', backupDays:'日経過',
     commentPlaceholder:'コメント...', photoBtn:'写真', removePhoto:'削除', btnSave:'保存',
     lembreteTitle:'リマインダー — 次回予約時に確認', btnLembreteSave:'リマインダーを保存', lembreteSaved:'保存済み ✓',
@@ -1156,17 +1159,17 @@ function buildSections(date, lang){
   }
 
   const refeicaoTasks = [
-    {id:'cafe', label:t.task.cafe, note:t.task.graca},
-    {id:'lancheManha', label:t.task.lancheManha},
-    {id:'almoco', label:t.task.almoco},
+    {id:'cafe', label:t.task.cafe, note:`${t.task.graca} • ${t.task.aguaRegra}`},
+    {id:'lancheManha', label:t.task.lancheManha, note:t.task.aguaRegra},
+    {id:'almoco', label:t.task.almoco, note:t.task.aguaRegra},
   ];
   if(wd !== 0 && wd !== 6){
     refeicaoTasks.push({id:'catalogue', label:t.task.catalogue});
   }
   refeicaoTasks.push(
-    {id:'lancheTarde', label:t.task.lancheTarde},
-    {id:'jantar', label:t.task.jantar, note:t.task.graca},
-    {id:'ceia', label:t.task.ceia},
+    {id:'lancheTarde', label:t.task.lancheTarde, note:t.task.aguaRegra},
+    {id:'jantar', label:t.task.jantar, note:`${t.task.graca} • ${t.task.aguaRegra}`},
+    {id:'ceia', label:t.task.ceia, note:t.task.aguaRegra},
   );
   sections.push({ id:'refeicoes', time:'', title:t.sec.refeicoes, tasks:refeicaoTasks });
 
