@@ -2306,6 +2306,18 @@ async function renderDayDetail(dateObj){
     let headHTML = `<div class="section-head"><div class="st"><span class="section-title">${sec.title}</span></div></div>`;
     box.innerHTML = headHTML;
     attachTimeEditor(box.querySelector('.section-head'), sec, data, key, () => renderDayDetail(dateObj));
+    if(sec.id === 'treino' && dateObj < today){
+      const st = box.querySelector('.st');
+      const badge = document.createElement('span');
+      if(data.treino){
+        badge.style.cssText = 'color:var(--sage); font-size:12px; font-weight:700; margin-left:8px; display:inline-flex; align-items:center; gap:4px;';
+        badge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Treinado`;
+      } else if(!data.reposto_em){
+        badge.style.cssText = 'color:var(--coral); font-size:12px; font-weight:700; margin-left:8px;';
+        badge.textContent = 'NÃO TREINADO';
+      }
+      if(badge.textContent || badge.innerHTML){ st.appendChild(badge); }
+    }
     const body = document.createElement('div');
     body.className = 'section-body';
 
@@ -2732,6 +2744,14 @@ async function gerarRelatorio(){
         y += lineHeight;
       });
     }
+    function drawCheckmark(x, yPos, size, r, g, b){
+      doc.setDrawColor(r, g, b);
+      doc.setLineWidth(0.6);
+      doc.line(x, yPos, x + size*0.35, yPos + size*0.35);
+      doc.line(x + size*0.35, yPos + size*0.35, x + size, yPos - size*0.4);
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.2);
+    }
 
     doc.setFont('helvetica','bold'); doc.setFontSize(15);
     doc.text(`Gandini 4.0 — Relatório (${titlePeriod})`, 20, y); y += 10;
@@ -2769,10 +2789,25 @@ async function gerarRelatorio(){
         if(rec.c_oracao){ doc.setFont('helvetica','italic'); wrappedText(`"${rec.c_oracao}"`, 28, pageW - 48, 5); doc.setFont('helvetica','normal'); }
       }
       if(incl.treino && type === 'treino'){
-        ensureSpace(6);
+        ensureSpace(7);
         const wd = dt.getDay ? dt.getDay() : new Date(dt).getDay();
         const letraDia = TREINO_LETRA[wd];
         const exs = WORKOUTS[letraDia] || [];
+        const treinado = !!rec.treino;
+
+        // Header-level status: green checkmark if trained, clear "NÃO TREINADO" otherwise
+        if(treinado){
+          drawCheckmark(24, y - 1.5, 4, 120, 170, 100);
+          doc.setFont('helvetica','bold'); doc.setTextColor(70,120,80);
+          doc.text('Treinado', 30, y);
+          doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+        } else if(!rec.reposto_em){
+          doc.setFont('helvetica','bold'); doc.setTextColor(180,90,70);
+          doc.text('NÃO TREINADO', 24, y);
+          doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+        }
+        y += 6;
+
         doc.setFont('helvetica','bold'); doc.text(`Treino ${letraDia} (${TREINO_GROUP[letraDia].pt}):`, 24, y); y += 5.5; doc.setFont('helvetica','normal');
         exs.forEach(ex => {
           const exId = `tr_${ex.id}`;
@@ -2790,8 +2825,9 @@ async function gerarRelatorio(){
         }
         if(rec.reposicao_de){
           ensureSpace(6);
+          drawCheckmark(26, y - 1.5, 3.5, 120, 170, 100);
           doc.setFont('helvetica','italic');
-          doc.text(`[REPOSIÇÃO do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}]`, 26, y);
+          doc.text(`  [REPOSIÇÃO do treino do dia ${fmtKeyDisplay(rec.reposicao_de)}]`, 26, y);
           doc.setFont('helvetica','normal');
           y += 5;
         }
