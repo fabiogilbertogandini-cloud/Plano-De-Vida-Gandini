@@ -2757,10 +2757,216 @@ async function loadJapaneseFontIfNeeded(doc, lang){
   jpFontLoaded = true;
 }
 
+async function gerarRelatorioHTML(log){
+  try{
+    log('Iniciando (versão HTML)...');
+    const rl = REPORT_STRINGS.ja;
+    const incl = {
+      refeicoes: document.getElementById('rep-refeicoes').checked,
+      espiritual: document.getElementById('rep-espiritual').checked,
+      treino: document.getElementById('rep-treino').checked,
+      agua: document.getElementById('rep-agua').checked,
+      medidas: document.getElementById('rep-medidas').checked,
+      suplementos: document.getElementById('rep-suplementos').checked,
+      medicamentos: document.getElementById('rep-medicamentos').checked && medUnlocked,
+    };
+    log('Calculando datas...');
+
+    let dates = [];
+    let titlePeriod = '';
+    if(reportScope === 'dia'){
+      dates = [calSelectedDate];
+      titlePeriod = `${String(calSelectedDate.getDate()).padStart(2,'0')}/${String(calSelectedDate.getMonth()+1).padStart(2,'0')}/${calSelectedDate.getFullYear()}`;
+    } else if(reportScope === 'semana'){
+      const monday = startOfWeek(calSelectedDate);
+      for(let i=0;i<7;i++){ const d = new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
+      titlePeriod = `${rl.semanaDe} ${monday.getDate()}/${monday.getMonth()+1}`;
+    } else if(reportScope === 'dias'){
+      if(diasPickerDates.length === 0){ alert(T[currentLang].noDaysSelected); log(''); return; }
+      dates = diasPickerDates.map(dstr => { const [y,m,d] = dstr.split('-').map(Number); return new Date(y, m-1, d); });
+      titlePeriod = `${dates.length}${rl.diasSelecionados}`;
+    } else {
+      const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 0).getDate();
+      for(let d=1; d<=daysInMonth; d++){ dates.push(new Date(calMonth.getFullYear(), calMonth.getMonth(), d)); }
+      titlePeriod = `${MESES.ja[calMonth.getMonth()]} ${calMonth.getFullYear()}`;
+    }
+
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let body = '';
+    let dayIdx = 0;
+    for(const dt of dates){
+      dayIdx++;
+      log(`日を処理中 ${dayIdx}/${dates.length}...`);
+      const rec = await getDay(fmtKey(dt));
+      const type = getDayType(dt);
+      let dayHtml = `<div class="day"><h2>${DIAS.ja[dt.getDay()]}　${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}</h2>`;
+
+      const daySections = buildSections(dt, 'ja');
+      const customTimes = daySections.filter(s => rec[`hora_${s.id}`]).map(s => `${s.title.replace(/\(.*\)/,'').trim()}: ${rec[`hora_${s.id}`]}`);
+      daySections.forEach(s => {
+        (s.tasks || []).forEach(tk => {
+          if(rec[`hora_${tk.id}`]) customTimes.push(`${tk.label}: ${rec[`hora_${tk.id}`]}`);
+        });
+      });
+      if(customTimes.length){
+        dayHtml += `<div class="times">${rl.horariosRegistrados} — ${esc(customTimes.join('　|　'))}</div>`;
+      }
+
+      if(incl.espiritual){
+        dayHtml += `<div class="row"><b>${rl.oracao}:</b> ${rec.oracao ? '☑' : '☐'}</div>`;
+        if(rec.c_oracao) dayHtml += `<div class="comment">「${esc(rec.c_oracao)}」</div>`;
+      }
+      if(incl.treino && type === 'treino'){
+        const wd = dt.getDay ? dt.getDay() : new Date(dt).getDay();
+        const letraDia = TREINO_LETRA[wd];
+        const exs = WORKOUTS[letraDia] || [];
+        const treinado = !!rec.treino;
+        if(treinado){
+          dayHtml += `<div class="status ok">✓ ${rl.treinado}</div>`;
+        } else if(!rec.reposto_em){
+          dayHtml += `<div class="status bad">${rl.naoTreinado}</div>`;
+        }
+        dayHtml += `<div class="subhead">${rl.treino} ${letraDia} (${TREINO_GROUP[letraDia].ja})</div><ul class="exlist">`;
+        exs.forEach(ex => {
+          const exId = `tr_${ex.id}`;
+          const exDone = rec[exId];
+          const exComment = rec[`c_${exId}`];
+          const grp = exGroup(ex, 'ja');
+          dayHtml += `<li>${exDone ? '☑' : '☐'} ${esc(exLabel(ex,'ja'))}${grp ? ` [${esc(grp)}]` : ''}${exComment ? ' — ' + esc(exComment) : ''}</li>`;
+        });
+        dayHtml += `</ul>`;
+        if(rec.reposto_em) dayHtml += `<div class="comment">${rl.reposNota(fmtKeyDisplay(rec.reposto_em))}</div>`;
+        if(rec.reposicao_de) dayHtml += `<div class="comment ok">✓ ${rl.reposFeita(fmtKeyDisplay(rec.reposicao_de))}</div>`;
+      }
+      if(incl.agua){
+        dayHtml += `<div class="row"><b>${rl.agua}:</b> ${rec.agua_ml||0} / 3500ml</div>`;
+        if(rec.c_agua) dayHtml += `<div class="comment">「${esc(rec.c_agua)}」</div>`;
+      }
+      if(incl.suplementos){
+        const suplList = getSuplementosList().filter(s => s.ativo);
+        const suplTxt = suplList.length
+          ? suplList.map(s => `${esc(s.nome)}:${rec[s.id] ? '☑' : '☐'}`).join('　')
+          : rl.nenhumSuplemento;
+        dayHtml += `<div class="row"><b>${rl.suplementos}:</b> ${suplTxt}</div>`;
+      }
+      if(incl.medicamentos){
+        dayHtml += `<div class="row"><b>${rl.medicamentos}:</b> Fluoxetine:${rec.fluoxetine?'☑':'☐'} Anfetamina:${rec.anfetamina?'☑':'☐'}</div>`;
+      }
+      if(incl.refeicoes){
+        dayHtml += `<div class="subhead">${rl.refeicoes}</div><ul class="mealist">`;
+        for(const mealId of MEAL_TASK_IDS){
+          const label = MEAL_LABELS[mealId].ja;
+          const done = rec[mealId];
+          const comment = rec[`c_${mealId}`];
+          const photos = getPhotosArr(rec, `p_${mealId}`);
+          dayHtml += `<li>${done ? '☑' : '☐'} ${esc(label)}${comment ? ' — ' + esc(comment) : ''}`;
+          if(photos.length){
+            dayHtml += `<div class="photos">` + photos.map(p => `<img src="${p}">`).join('') + `</div>`;
+          }
+          dayHtml += `</li>`;
+        }
+        dayHtml += `</ul>`;
+      }
+      dayHtml += `</div>`;
+      body += dayHtml;
+    }
+
+    if(incl.medidas){
+      let medHtml = `<div class="day"><h2>${rl.medidasReg}</h2>`;
+      const allMedidas = await getAllHistorico();
+      const dateKeys = new Set(dates.map(d => fmtKey(d)));
+      const inRange = allMedidas.filter(e => dateKeys.has(e.data));
+      if(inRange.length === 0){ medHtml += `<div class="row">${rl.nenhumaMedicao}</div>`; }
+      else{
+        medHtml += `<ul>` + inRange.map(e => `<li>${e.data} — ${rl.peso}: ${e.peso||'—'}kg, ${rl.cintura}: ${e.cintura||'—'}cm, ${rl.abdomen}: ${e.abdomen||'—'}cm</li>`).join('') + `</ul>`;
+      }
+      const NUTRI_SCHEDULE = [
+        { data:'2026-07-31', tipo:'pesagem' },
+        { data:'2026-08-07', tipo:'pesagem' },
+        { data:'2026-08-14', tipo:'pesagem' },
+        { data:'2026-08-21', tipo:'pesagem' },
+        { data:'2026-08-26', tipo:'consulta' },
+      ];
+      const todayKeyNow = fmtKey(today);
+      const allMedidasKeys = new Set(allMedidas.map(e => e.data));
+      medHtml += `<h3>${rl.cronograma}</h3><ul>`;
+      NUTRI_SCHEDULE.forEach(s => {
+        const label = s.tipo === 'consulta' ? rl.consulta : rl.pesagem;
+        let status;
+        if(allMedidasKeys.has(s.data)) status = rl.registrada;
+        else if(s.data < todayKeyNow) status = rl.pendente;
+        else if(s.data === todayKeyNow) status = rl.hojeLbl;
+        else status = rl.upcoming;
+        medHtml += `<li>${fmtKeyDisplay(s.data)} — ${label} ${status}</li>`;
+      });
+      medHtml += `</ul></div>`;
+      body += medHtml;
+    }
+
+    log('Montando arquivo HTML...');
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Gandini 4.0 — ${esc(rl.relatorio)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body{ font-family:'Noto Sans JP', sans-serif; max-width:800px; margin:24px auto; padding:0 16px; color:#1a1a1a; }
+  .header{ display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #D6A75A; padding-bottom:12px; margin-bottom:16px; }
+  .header img{ height:56px; }
+  h1{ font-size:20px; margin:0; }
+  .day{ page-break-inside:avoid; border-bottom:1px solid #ddd; padding:14px 0; }
+  .day h2{ font-size:15px; color:#8a6a2f; margin:0 0 8px; }
+  .subhead{ font-weight:700; margin:8px 0 4px; }
+  .row{ margin:4px 0; font-size:13px; }
+  .comment{ font-size:12px; color:#555; margin:2px 0 6px 16px; font-style:italic; }
+  .comment.ok{ color:#2e7d4f; font-style:normal; }
+  .status{ font-weight:700; margin:4px 0; }
+  .status.ok{ color:#2e7d4f; }
+  .status.bad{ color:#b4562f; }
+  .exlist, .mealist{ list-style:none; padding-left:8px; margin:4px 0; }
+  .exlist li, .mealist li{ font-size:13px; margin:3px 0; }
+  .photos{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 6px 16px; }
+  .photos img{ width:140px; height:140px; object-fit:cover; border-radius:6px; border:1px solid #ccc; }
+  @media print{ .day{ page-break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Gandini 4.0 — ${esc(rl.relatorio)}（${esc(titlePeriod)}）</h1>
+  <img src="data:image/jpeg;base64,${LOGO_BASE64}">
+</div>
+${body}
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gandini-relatorio-ja-${reportScope}-${fmtKey(dates[0])}-${Date.now()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+    log('✅ HTML gerado! Abre o arquivo baixado e usa "Imprimir → Salvar como PDF".');
+    setTimeout(() => { if(document.getElementById('relatorio-status').textContent.startsWith('✅')) log(''); }, 9000);
+  }catch(e){
+    console.error('relatorio html error', e);
+    log(`❌ ERRO: ${e.message || e}\n\n${e.stack || ''}`);
+    alert(T[currentLang].reportGenError);
+  }
+}
+
 async function gerarRelatorio(){
   const statusEl = document.getElementById('relatorio-status');
   const btnEl = document.getElementById('btn-relatorio');
   const log = (msg) => { if(statusEl) statusEl.textContent = msg; };
+  if(reportLang === 'ja'){
+    return gerarRelatorioHTML(log);
+  }
   try{
     log('Iniciando...');
     if(!window.jspdf || !window.jspdf.jsPDF){
