@@ -284,6 +284,7 @@
       <div class="lang-btn" id="logout-btn" onclick="logoutApp()">🔒 Sair</div>
     </div>
     <div id="sync-status" onclick="document.getElementById('sync-status').textContent='';" style="text-align:center; font-size:13px; color:var(--amber); margin:6px 0 0; min-height:16px; cursor:pointer;"></div>
+    <div id="last-notif-wrap" style="margin-top:6px;"></div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
         <path d="M 15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#262E3A" stroke-width="10" stroke-linecap="round"/>
@@ -1369,10 +1370,43 @@ async function setupPushNotifications(){
     fbMessaging.onMessage((payload) => {
       const title = payload.notification?.title || 'Gandini 4.0';
       const body = payload.notification?.body || '';
-      setSyncStatus(`🔔 ${title} — ${body}`);
-      setTimeout(() => setSyncStatus(''), 8000);
+      saveLastNotif(title, body);
     });
   }catch(e){ console.error('push setup error', e); }
+}
+
+function saveLastNotif(title, body){
+  try{
+    localStorage.setItem('gandini-last-notif', JSON.stringify({ title, body, ts: Date.now(), dismissed: false }));
+  }catch(e){}
+  renderLastNotif();
+}
+
+function renderLastNotif(){
+  const wrap = document.getElementById('last-notif-wrap');
+  if(!wrap) return;
+  let n = null;
+  try{ n = JSON.parse(localStorage.getItem('gandini-last-notif') || 'null'); }catch(e){}
+  if(!n){ wrap.innerHTML = ''; return; }
+  if(n.dismissed){
+    wrap.innerHTML = `<div style="text-align:center;"><span class="link-btn" id="notif-reopen" style="font-size:11px;">🔔 mostrar de novo</span></div>`;
+    document.getElementById('notif-reopen').addEventListener('click', () => {
+      n.dismissed = false;
+      try{ localStorage.setItem('gandini-last-notif', JSON.stringify(n)); }catch(e){}
+      renderLastNotif();
+    });
+  } else {
+    wrap.innerHTML = `
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:8px;">
+        <div style="flex:1; font-size:13px; color:var(--ink);"><b>${n.title}</b><br><span style="color:var(--ink-dim);">${n.body}</span></div>
+        <button id="notif-dismiss" style="background:none; border:none; color:var(--ink-faint); font-size:16px; cursor:pointer; line-height:1; padding:0 2px;">✕</button>
+      </div>`;
+    document.getElementById('notif-dismiss').addEventListener('click', () => {
+      n.dismissed = true;
+      try{ localStorage.setItem('gandini-last-notif', JSON.stringify(n)); }catch(e){}
+      renderLastNotif();
+    });
+  }
 }
 
 async function syncFromCloud(){
@@ -1510,6 +1544,7 @@ async function initApp(){
   renderAll();
   switchTab('hoje');
   handleQuickAction();
+  renderLastNotif();
 }
 
 function handleQuickAction(){
