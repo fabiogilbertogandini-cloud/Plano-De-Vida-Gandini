@@ -2809,21 +2809,32 @@ async function gerarRelatorio(){
     let y = 20;
     function ensureSpace(n){ if(y+n > pageH-15){ doc.addPage(); y=20; } }
     function wrappedText(text, x, maxWidth, lineHeight){
-      const words = String(text).split(' ');
-      const lines = [];
+      const str = String(text);
+      let fontSize = 9;
+      try{ fontSize = doc.internal.getFontSize(); }catch(e){}
+      const approxCharWidthMM = fontSize * 0.5 * 0.3527; // pt→mm, avg glyph-width ratio
+      const maxChars = Math.max(10, Math.floor(maxWidth / approxCharWidthMM));
+
+      const words = str.split(' ');
+      const rough = [];
       let line = '';
       words.forEach(w => {
         const test = line ? line + ' ' + w : w;
-        let width;
-        try{ width = doc.getTextWidth(test); }catch(e){ width = test.length * 2; }
-        if(width > maxWidth && line){
-          lines.push(line);
+        if(test.length > maxChars && line){
+          rough.push(line);
           line = w;
         } else {
           line = test;
         }
       });
-      if(line) lines.push(line);
+      if(line) rough.push(line);
+
+      const lines = [];
+      rough.forEach(l => {
+        if(l.length <= maxChars){ lines.push(l); }
+        else { for(let i=0;i<l.length;i+=maxChars){ lines.push(l.slice(i, i+maxChars)); } }
+      });
+
       lines.forEach(l => {
         ensureSpace(lineHeight);
         doc.text(l, x, y);
@@ -3014,11 +3025,13 @@ async function gerarRelatorio(){
 
     log('Montando numeração de páginas...');
     const totalPages = doc.internal.getNumberOfPages();
+    doc.setFont('helvetica', 'normal');
     for(let p = 1; p <= totalPages; p++){
       doc.setPage(p);
       try{ doc.addImage(`data:image/jpeg;base64,${LOGO_BASE64}`, 'JPEG', pageW - 32, 8, 18, 20); }catch(e){}
       doc.setFontSize(8); doc.setTextColor(140,140,140);
-      doc.text(`${p} / ${totalPages}`, pageW/2, pageH - 8, { align:'center' });
+      const pageLabel = `${p} / ${totalPages}`;
+      doc.text(pageLabel, pageW/2 - pageLabel.length * 0.9, pageH - 8);
       doc.setTextColor(0,0,0);
     }
 
