@@ -285,6 +285,7 @@
     </div>
     <div id="sync-status" onclick="document.getElementById('sync-status').textContent='';" style="text-align:center; font-size:13px; color:var(--amber); margin:6px 0 0; min-height:16px; cursor:pointer;"></div>
     <div id="last-notif-wrap" style="margin-top:6px;"></div>
+    <div id="last-saved-wrap" style="text-align:center; font-size:11px; color:var(--sage); margin-top:4px; min-height:14px;"></div>
     <div class="arc-wrap">
       <svg width="180" height="100" viewBox="0 0 180 100">
         <path d="M 15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#262E3A" stroke-width="10" stroke-linecap="round"/>
@@ -724,7 +725,7 @@ const T = {
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
-    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:',
+    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:', savedAt:'Salvo às',
     logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
     gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
     fpNotSupported:'Esse navegador não suporta login por impressão digital.',
@@ -794,7 +795,7 @@ const T = {
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
-    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:',
+    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:', savedAt:'Saved at',
     logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
     gcalLoading:'Google is still loading, try again in a few seconds.',
     fpNotSupported:'This browser doesn\'t support fingerprint login.',
@@ -864,7 +865,7 @@ const T = {
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
-    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：',
+    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：', savedAt:'保存済み',
     logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
     gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
     fpNotSupported:'このブラウザは指紋ログインに対応していません。',
@@ -1240,6 +1241,7 @@ function saveSuplementosList(list){
   try{
     localStorage.setItem('gandini-suplementos-list', JSON.stringify(list));
     localStorage.setItem('gandini-suplementos-ts', String(ts));
+    markSaved();
   }catch(e){}
   if(fbReady && fbAuth.currentUser){
     fbDb.collection('meta').doc('suplementos').set({ list, _updatedAt: ts }).catch(e => console.error('firestore supl write error', e));
@@ -1529,10 +1531,30 @@ async function getDay(key){
 }
 async function setDay(key, data){
   data._updatedAt = Date.now();
-  try{ localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data)); }catch(e){ console.error(e); }
+  try{ localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data)); markSaved(); }catch(e){ console.error(e); }
   if(fbReady && fbAuth.currentUser){
     fbDb.collection('days').doc(key).set(data).catch(e => console.error('firestore write error', e));
   }
+}
+
+function markSaved(){
+  const now = Date.now();
+  try{ localStorage.setItem('gandini-last-saved', String(now)); }catch(e){}
+  renderLastSaved(now);
+}
+
+function renderLastSaved(ts){
+  const el = document.getElementById('last-saved-wrap');
+  if(!el) return;
+  if(!ts){
+    try{ ts = Number(localStorage.getItem('gandini-last-saved')); }catch(e){}
+  }
+  if(!ts){ el.textContent = ''; return; }
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const ss = String(d.getSeconds()).padStart(2,'0');
+  el.textContent = `✓ ${T[currentLang].savedAt} ${hh}:${mm}:${ss}`;
 }
 
 let dayData = {};
@@ -1552,6 +1574,7 @@ async function initApp(){
   switchTab('hoje');
   handleQuickAction();
   renderLastNotif();
+  renderLastSaved();
 }
 
 function handleQuickAction(){
@@ -1619,6 +1642,7 @@ function renderStaticText(){
   document.getElementById('dias-picker-hint').textContent = t.diasPickerHint;
   document.getElementById('dias-picker-clear-all').textContent = t.diasPickerClear;
   document.getElementById('logout-btn').textContent = t.logoutBtn;
+  renderLastSaved();
   document.querySelectorAll('[data-k]').forEach(el => {
     const k = el.dataset.k;
     if(t[k] !== undefined) el.textContent = t[k];
@@ -3286,6 +3310,7 @@ async function salvarMedida(){
   try{
     entry._updatedAt = Date.now();
     localStorage.setItem(`gandini-medidas:${data}`, JSON.stringify(entry));
+    markSaved();
     if(fbReady && fbAuth.currentUser){
       fbDb.collection('medidas').doc(data).set(entry).catch(e => console.error('firestore medida write error', e));
     }
