@@ -725,7 +725,7 @@ const T = {
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
-    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:', savedAt:'Salvo às',
+    suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:', savedAt:'Salvo às', autoSaving:'Salvando...',
     logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
     gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
     fpNotSupported:'Esse navegador não suporta login por impressão digital.',
@@ -795,7 +795,7 @@ const T = {
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
-    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:', savedAt:'Saved at',
+    suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:', savedAt:'Saved at', autoSaving:'Saving...',
     logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
     gcalLoading:'Google is still loading, try again in a few seconds.',
     fpNotSupported:'This browser doesn\'t support fingerprint login.',
@@ -865,7 +865,7 @@ const T = {
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
-    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：', savedAt:'保存済み',
+    suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：', savedAt:'保存済み', autoSaving:'保存中...',
     logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
     gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
     fpNotSupported:'このブラウザは指紋ログインに対応していません。',
@@ -1422,8 +1422,7 @@ async function syncFromCloud(){
   fbSyncing = true;
   setSyncStatus('☁️ Sincronizando...');
   try{
-    // Days — PULL IS NON-DESTRUCTIVE: only fills days that don't exist locally at all.
-    // Never overwrites an existing local record, even if the cloud copy claims to be newer.
+    // Days
     const snap = await fbDb.collection('days').get();
     let pulled = 0, pushed = 0;
     const remoteKeys = new Set();
@@ -1431,12 +1430,15 @@ async function syncFromCloud(){
       remoteKeys.add(doc.id);
       const remote = doc.data();
       const localRaw = localStorage.getItem(`gandini-day:${doc.id}`);
-      if(!localRaw){
+      const local = localRaw ? JSON.parse(localRaw) : null;
+      const remoteTs = remote._updatedAt || 0;
+      const localTs = local && local._updatedAt || 0;
+      if(!local || remoteTs > localTs){
         localStorage.setItem(`gandini-day:${doc.id}`, JSON.stringify(remote));
         pulled++;
       }
     }
-    // Push any local days that don't exist remotely yet, OR that are newer locally (never pulls the other direction)
+    // Push any local days that don't exist remotely yet (initial migration) or are newer
     const localDayKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-day:'));
     let failed = 0;
     const failedDays = [];
@@ -1457,7 +1459,7 @@ async function syncFromCloud(){
     }
     if(failed > 0) console.warn('Dias que falharam ao sincronizar:', failedDays.join(', '));
 
-    // Medidas (measurements) — same non-destructive rule
+    // Medidas (measurements)
     try{
       const medSnap = await fbDb.collection('medidas').get();
       const remoteMedKeys = new Set();
@@ -1465,7 +1467,10 @@ async function syncFromCloud(){
         remoteMedKeys.add(doc.id);
         const remote = doc.data();
         const localRaw = localStorage.getItem(`gandini-medidas:${doc.id}`);
-        if(!localRaw){
+        const local = localRaw ? JSON.parse(localRaw) : null;
+        const remoteTs = remote._updatedAt || 0;
+        const localTs = local && local._updatedAt || 0;
+        if(!local || remoteTs > localTs){
           localStorage.setItem(`gandini-medidas:${doc.id}`, JSON.stringify(remote));
           pulled++;
         }
@@ -1481,14 +1486,14 @@ async function syncFromCloud(){
         }
       }
     }catch(e){ console.error('medidas sync error', e); }
-    // Suplementos list — only pull if local list has never been saved (no local timestamp at all)
+    // Suplementos list — newest wins by _updatedAt
     try{
       const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
       const localSupl = getSuplementosList();
       const localSupTs = Number(localStorage.getItem('gandini-suplementos-ts') || 0);
       if(suplDoc.exists){
         const remoteSupl = suplDoc.data();
-        if(!localSupTs){
+        if((remoteSupl._updatedAt || 0) > localSupTs){
           saveSuplementosList(remoteSupl.list || []);
         } else if(localSupTs > (remoteSupl._updatedAt || 0)){
           await fbDb.collection('meta').doc('suplementos').set({ list: localSupl, _updatedAt: localSupTs });
@@ -2046,6 +2051,7 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
       t.querySelector('button').addEventListener('click', () => {
         pendingPhotos.splice(i, 1);
         renderThumbs();
+        doSave();
       });
       thumbsWrap.appendChild(t);
     });
@@ -2065,6 +2071,7 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
         }catch(e){ console.error('photo compress error', e); }
       }
       renderThumbs();
+      doSave();
     }
     camInput.addEventListener('change', () => { handleFiles(camInput.files); camInput.value = ''; });
     galInput.addEventListener('change', () => { handleFiles(galInput.files); galInput.value = ''; });
@@ -2073,7 +2080,8 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   const saveBtn = box.querySelector('.comment-save-btn');
   const savedMsg = box.querySelector('.comment-saved-msg');
   const textarea = box.querySelector('textarea');
-  saveBtn.addEventListener('click', async () => {
+
+  async function doSave(){
     dataObj[commentKey] = textarea.value;
     if(isMeal){
       if(pendingPhotos.length) dataObj[photoKey] = pendingPhotos.slice();
@@ -2093,6 +2101,20 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
       }
     }, 1500);
     if(onSaved) onSaved();
+  }
+
+  saveBtn.addEventListener('click', doSave);
+
+  let autoSaveTimer = null;
+  textarea.addEventListener('input', () => {
+    savedMsg.textContent = t.autoSaving;
+    savedMsg.style.color = 'var(--amber)';
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(doSave, 1500);
+  });
+  textarea.addEventListener('blur', () => {
+    clearTimeout(autoSaveTimer);
+    doSave();
   });
 
   return box;
