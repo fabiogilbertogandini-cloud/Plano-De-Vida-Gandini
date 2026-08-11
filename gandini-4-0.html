@@ -1422,7 +1422,8 @@ async function syncFromCloud(){
   fbSyncing = true;
   setSyncStatus('☁️ Sincronizando...');
   try{
-    // Days
+    // Days — PULL IS NON-DESTRUCTIVE: only fills days that don't exist locally at all.
+    // Never overwrites an existing local record, even if the cloud copy claims to be newer.
     const snap = await fbDb.collection('days').get();
     let pulled = 0, pushed = 0;
     const remoteKeys = new Set();
@@ -1430,15 +1431,12 @@ async function syncFromCloud(){
       remoteKeys.add(doc.id);
       const remote = doc.data();
       const localRaw = localStorage.getItem(`gandini-day:${doc.id}`);
-      const local = localRaw ? JSON.parse(localRaw) : null;
-      const remoteTs = remote._updatedAt || 0;
-      const localTs = local && local._updatedAt || 0;
-      if(!local || remoteTs > localTs){
+      if(!localRaw){
         localStorage.setItem(`gandini-day:${doc.id}`, JSON.stringify(remote));
         pulled++;
       }
     }
-    // Push any local days that don't exist remotely yet (initial migration) or are newer
+    // Push any local days that don't exist remotely yet, OR that are newer locally (never pulls the other direction)
     const localDayKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-day:'));
     let failed = 0;
     const failedDays = [];
@@ -1459,7 +1457,7 @@ async function syncFromCloud(){
     }
     if(failed > 0) console.warn('Dias que falharam ao sincronizar:', failedDays.join(', '));
 
-    // Medidas (measurements)
+    // Medidas (measurements) — same non-destructive rule
     try{
       const medSnap = await fbDb.collection('medidas').get();
       const remoteMedKeys = new Set();
@@ -1467,10 +1465,7 @@ async function syncFromCloud(){
         remoteMedKeys.add(doc.id);
         const remote = doc.data();
         const localRaw = localStorage.getItem(`gandini-medidas:${doc.id}`);
-        const local = localRaw ? JSON.parse(localRaw) : null;
-        const remoteTs = remote._updatedAt || 0;
-        const localTs = local && local._updatedAt || 0;
-        if(!local || remoteTs > localTs){
+        if(!localRaw){
           localStorage.setItem(`gandini-medidas:${doc.id}`, JSON.stringify(remote));
           pulled++;
         }
@@ -1486,14 +1481,14 @@ async function syncFromCloud(){
         }
       }
     }catch(e){ console.error('medidas sync error', e); }
-    // Suplementos list — newest wins by _updatedAt
+    // Suplementos list — only pull if local list has never been saved (no local timestamp at all)
     try{
       const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
       const localSupl = getSuplementosList();
       const localSupTs = Number(localStorage.getItem('gandini-suplementos-ts') || 0);
       if(suplDoc.exists){
         const remoteSupl = suplDoc.data();
-        if((remoteSupl._updatedAt || 0) > localSupTs){
+        if(!localSupTs){
           saveSuplementosList(remoteSupl.list || []);
         } else if(localSupTs > (remoteSupl._updatedAt || 0)){
           await fbDb.collection('meta').doc('suplementos').set({ list: localSupl, _updatedAt: localSupTs });
