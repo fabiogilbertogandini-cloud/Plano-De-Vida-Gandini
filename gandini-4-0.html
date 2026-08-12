@@ -242,6 +242,11 @@
   .water-bucket .wb-check{ position:absolute; top:-6px; right:-8px; background:var(--sage); color:#0C0F14;
     border-radius:50%; width:20px; height:20px; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; }
   @keyframes bucketPop{ 0%{ transform:scale(0); opacity:0; } 55%{ transform:scale(1.3); opacity:1; } 100%{ transform:scale(1); } }
+#debug-btn{ position:fixed; bottom:14px; right:14px; z-index:99999; width:44px; height:44px; border-radius:50%; background:#222; color:#0f0; border:2px solid #0f0; font-size:20px; display:flex; align-items:center; justify-content:center; opacity:0.55; }
+#debug-panel{ position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,0.92); color:#0f0; font-family:monospace; font-size:12px; padding:12px; padding-top:50px; overflow-y:auto; display:none; white-space:pre-wrap; word-break:break-word; }
+#debug-panel.open{ display:block; }
+#debug-panel .dp-close{ position:fixed; top:10px; right:10px; z-index:99999; background:#0f0; color:#000; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; font-family:sans-serif; }
+#debug-panel .dp-clear{ position:fixed; top:10px; right:90px; z-index:99999; background:#333; color:#0f0; border:1px solid #0f0; padding:8px 14px; border-radius:6px; font-family:sans-serif; }
 </style>
 </head>
 <body>
@@ -2082,25 +2087,32 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
   const textarea = box.querySelector('textarea');
 
   async function doSave(){
-    dataObj[commentKey] = textarea.value;
-    if(isMeal){
-      if(pendingPhotos.length) dataObj[photoKey] = pendingPhotos.slice();
-      else delete dataObj[photoKey];
-    }
-    await setDay(dataKey, dataObj);
-    const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
-    if(commentBtn) commentBtn.classList.toggle('has', hasContent);
-    savedMsg.textContent = t.savedMsg;
-    savedMsg.style.color = 'var(--sage)';
-    setTimeout(() => {
-      if(hasContent){
-        savedMsg.textContent = '✓';
-        savedMsg.style.color = 'var(--ink-faint)';
-      } else {
-        savedMsg.textContent = '';
+    try{
+      if(typeof debugLog === 'function') debugLog(`doSave() chamado, dataKey=${dataKey}, texto="${(textarea.value||'').slice(0,20)}"`);
+      dataObj[commentKey] = textarea.value;
+      if(isMeal){
+        if(pendingPhotos.length) dataObj[photoKey] = pendingPhotos.slice();
+        else delete dataObj[photoKey];
       }
-    }, 1500);
-    if(onSaved) onSaved();
+      await setDay(dataKey, dataObj);
+      if(typeof debugLog === 'function') debugLog(`doSave() OK — setDay concluído para ${dataKey}`);
+      const hasContent = (textarea.value.trim().length > 0) || (isMeal && !!dataObj[photoKey]);
+      if(commentBtn) commentBtn.classList.toggle('has', hasContent);
+      savedMsg.textContent = t.savedMsg;
+      savedMsg.style.color = 'var(--sage)';
+      setTimeout(() => {
+        if(hasContent){
+          savedMsg.textContent = '✓';
+          savedMsg.style.color = 'var(--ink-faint)';
+        } else {
+          savedMsg.textContent = '';
+        }
+      }, 1500);
+      if(onSaved) onSaved();
+    }catch(err){
+      if(typeof debugLog === 'function') debugLog(`❌ ERRO em doSave(): ${err && err.message ? err.message : err}`);
+      console.error('doSave error', err);
+    }
   }
 
   saveBtn.addEventListener('click', doSave);
@@ -2971,7 +2983,7 @@ async function gerarRelatorioHTML(log){
   .photos{ display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 6px 16px; }
   .photos img{ width:140px; height:140px; object-fit:cover; border-radius:6px; border:1px solid #ccc; }
   @media print{ .day{ page-break-inside:avoid; } }
-</style>
+</style>DUMMY_UNIQUE_MARKER_JA_TEMPLATE
 </head>
 <body>
 <div class="header">
@@ -3557,6 +3569,46 @@ function gerarPDF(){
 /* Runs last, after every const/let/function above is fully defined, to avoid referencing them too early. */
 initReportPanel();
 if(!checkPersistedUnlock()){ showFingerprintButtonIfAvailable(); }
+
+/* ===== DEBUG PANEL — mostra erros e eventos direto na tela, sem precisar de console ===== */
+function debugLog(msg){
+  try{
+    const el = document.getElementById('debug-log');
+    if(!el) return;
+    const line = document.createElement('div');
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    line.textContent = `[${hh}:${mm}:${ss}] ${msg}`;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }catch(e){}
+}
+window.addEventListener('error', (e) => {
+  debugLog(`❌ ERRO: ${e.message} (linha ${e.lineno}, coluna ${e.colno})`);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+  debugLog(`❌ PROMISE REJEITADA: ${reason}`);
+});
+document.getElementById('debug-btn').addEventListener('click', () => {
+  document.getElementById('debug-panel').classList.add('open');
+  debugLog('Painel de debug aberto. App carregado, sem erro de inicialização.');
+});
+document.getElementById('debug-close').addEventListener('click', () => {
+  document.getElementById('debug-panel').classList.remove('open');
+});
+document.getElementById('debug-clear').addEventListener('click', () => {
+  document.getElementById('debug-log').innerHTML = '';
+});
+debugLog('App iniciado.');
 </script>
+<button id="debug-btn" title="debug">🐞</button>
+<div id="debug-panel">
+  <button class="dp-close" id="debug-close">Fechar ✕</button>
+  <button class="dp-clear" id="debug-clear">Limpar</button>
+  <div id="debug-log"></div>
+</div>
 </body>
 </html>
