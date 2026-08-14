@@ -1340,6 +1340,14 @@ try{
   fbDb = firebase.firestore();
   fbDb.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn('Firestore persistence not enabled:', e.code));
   fbReady = true;
+  let syncedOnAuthOnce = false;
+  fbAuth.onAuthStateChanged((user) => {
+    if(typeof debugLog === 'function') debugLog(`onAuthStateChanged: ${user ? 'logado como ' + user.email : 'sem usuário'}`);
+    if(user && !syncedOnAuthOnce){
+      syncedOnAuthOnce = true;
+      syncFromCloud();
+    }
+  });
 }catch(e){ console.error('Firebase init error', e); }
 
 function setSyncStatus(msg){
@@ -3621,7 +3629,7 @@ dpPanel.querySelector('#debug-close').addEventListener('click', () => {
 dpPanel.querySelector('#debug-clear').addEventListener('click', () => {
   dpPanel.querySelector('#debug-log').innerHTML = '';
 });
-debugLog('App iniciado. Toque no 🐞 pra ver os logs.');
+debugLog('App iniciado. VERSAO DEBUG: 2026-08-14-v3 (com log de erro de sync).');
 </script>
 </body>
 </html>
