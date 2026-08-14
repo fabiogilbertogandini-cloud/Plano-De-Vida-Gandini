@@ -1354,6 +1354,7 @@ async function firebaseSignInWithPassword(password){
     return true;
   }catch(e){
     console.error('Firebase sign-in error', e);
+    if(typeof debugLog === 'function') debugLog(`❌ ERRO login Firebase: ${e && e.message ? e.message : e} | code: ${e && e.code}`);
     return false;
   }
 }
@@ -1457,6 +1458,7 @@ async function syncFromCloud(){
           pushed++;
         }catch(e){
           console.error(`firestore push error for ${dayKey}`, e);
+          if(typeof debugLog === 'function') debugLog(`❌ ERRO ao enviar dia ${dayKey}: ${e && e.message ? e.message : e} | code: ${e && e.code}`);
           failed++;
           failedDays.push(dayKey);
         }
@@ -1490,7 +1492,7 @@ async function syncFromCloud(){
           catch(e){ console.error(`firestore medida push error for ${medKey}`, e); failed++; }
         }
       }
-    }catch(e){ console.error('medidas sync error', e); }
+    }catch(e){ console.error('medidas sync error', e); if(typeof debugLog === 'function') debugLog(`❌ ERRO sync medidas: ${e && e.message ? e.message : e} | code: ${e && e.code}`); }
     // Suplementos list — newest wins by _updatedAt
     try{
       const suplDoc = await fbDb.collection('meta').doc('suplementos').get();
@@ -1506,7 +1508,7 @@ async function syncFromCloud(){
       } else {
         await fbDb.collection('meta').doc('suplementos').set({ list: localSupl, _updatedAt: Date.now() });
       }
-    }catch(e){ console.error('supplement sync error', e); }
+    }catch(e){ console.error('supplement sync error', e); if(typeof debugLog === 'function') debugLog(`❌ ERRO sync suplementos: ${e && e.message ? e.message : e} | code: ${e && e.code}`); }
 
     setSyncStatus(
       failed > 0 ? `☁️ Sincronizado, mas ${failed} dia(s) falharam (provavelmente por causa de fotos grandes) — toque pra esconder` :
@@ -1520,6 +1522,7 @@ async function syncFromCloud(){
     setTimeout(() => setSyncStatus(''), 30000);
   }catch(e){
     console.error('sync error', e);
+    if(typeof debugLog === 'function') debugLog(`❌ SYNC ERROR (geral): ${e && e.message ? e.message : e} | code: ${e && e.code} | stack: ${e && e.stack ? String(e.stack).slice(0,300) : 'n/a'}`);
     setSyncStatus('⚠️ Erro ao sincronizar — os dados continuam salvos neste aparelho. Toque pra esconder.');
     fbSyncing = false;
   }
@@ -1538,7 +1541,10 @@ async function setDay(key, data){
   data._updatedAt = Date.now();
   try{ localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data)); markSaved(); }catch(e){ console.error(e); }
   if(fbReady && fbAuth.currentUser){
-    fbDb.collection('days').doc(key).set(data).catch(e => console.error('firestore write error', e));
+    fbDb.collection('days').doc(key).set(data).catch(e => {
+      console.error('firestore write error', e);
+      if(typeof debugLog === 'function') debugLog(`❌ ERRO firestore write (dia ${key}): ${e && e.message ? e.message : e} | code: ${e && e.code}`);
+    });
   }
 }
 
