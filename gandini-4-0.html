@@ -3592,23 +3592,30 @@ window.addEventListener('unhandledrejection', (e) => {
   const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
   debugLog(`❌ PROMISE REJEITADA: ${reason}`);
 });
-document.getElementById('debug-btn').addEventListener('click', () => {
-  document.getElementById('debug-panel').classList.add('open');
-  debugLog('Painel de debug aberto. App carregado, sem erro de inicialização.');
+
+/* Cria o botão e o painel via JS (não depende da ordem das tags no HTML) */
+const dpBtn = document.createElement('button');
+dpBtn.id = 'debug-btn';
+dpBtn.title = 'debug';
+dpBtn.textContent = '🐞';
+document.body.appendChild(dpBtn);
+
+const dpPanel = document.createElement('div');
+dpPanel.id = 'debug-panel';
+dpPanel.innerHTML = '<button class="dp-close" id="debug-close">Fechar ✕</button><button class="dp-clear" id="debug-clear">Limpar</button><div id="debug-log"></div>';
+document.body.appendChild(dpPanel);
+
+dpBtn.addEventListener('click', () => {
+  dpPanel.classList.add('open');
+  debugLog('Painel de debug aberto.');
 });
-document.getElementById('debug-close').addEventListener('click', () => {
-  document.getElementById('debug-panel').classList.remove('open');
+dpPanel.querySelector('#debug-close').addEventListener('click', () => {
+  dpPanel.classList.remove('open');
 });
-document.getElementById('debug-clear').addEventListener('click', () => {
-  document.getElementById('debug-log').innerHTML = '';
+dpPanel.querySelector('#debug-clear').addEventListener('click', () => {
+  dpPanel.querySelector('#debug-log').innerHTML = '';
 });
-debugLog('App iniciado.');
+debugLog('App iniciado. Toque no 🐞 pra ver os logs.');
 </script>
-<button id="debug-btn" title="debug">🐞</button>
-<div id="debug-panel">
-  <button class="dp-close" id="debug-close">Fechar ✕</button>
-  <button class="dp-clear" id="debug-clear">Limpar</button>
-  <div id="debug-log"></div>
-</div>
 </body>
 </html>
