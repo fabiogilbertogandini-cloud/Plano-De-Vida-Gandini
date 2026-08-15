@@ -1448,8 +1448,17 @@ async function syncFromCloud(){
       const remoteTs = remote._updatedAt || 0;
       const localTs = local && local._updatedAt || 0;
       if(!local || remoteTs > localTs){
-        localStorage.setItem(`gandini-day:${doc.id}`, JSON.stringify(remote));
-        pulled++;
+        try{
+          const serialized = JSON.stringify(remote);
+          if(serialized.length > 400000 && typeof debugLog === 'function'){
+            debugLog(`⚠️ Dia ${doc.id} é GRANDE: ${(serialized.length/1024).toFixed(0)}KB — provável causa de estouro de cota se falhar.`);
+          }
+          localStorage.setItem(`gandini-day:${doc.id}`, serialized);
+          pulled++;
+        }catch(e){
+          console.error(`erro ao gravar dia ${doc.id} localmente`, e);
+          if(typeof debugLog === 'function') debugLog(`❌ ERRO ao gravar dia ${doc.id} no localStorage (pulado, resto do sync continua): ${e && e.message ? e.message : e} | code: ${e && e.name}`);
+        }
       }
     }
     // Push any local days that don't exist remotely yet (initial migration) or are newer
@@ -1485,10 +1494,15 @@ async function syncFromCloud(){
         const local = localRaw ? JSON.parse(localRaw) : null;
         const remoteTs = remote._updatedAt || 0;
         const localTs = local && local._updatedAt || 0;
-        if(!local || remoteTs > localTs){
+      if(!local || remoteTs > localTs){
+        try{
           localStorage.setItem(`gandini-medidas:${doc.id}`, JSON.stringify(remote));
           pulled++;
+        }catch(e){
+          console.error(`erro ao gravar medida ${doc.id} localmente`, e);
+          if(typeof debugLog === 'function') debugLog(`❌ ERRO ao gravar medida ${doc.id} no localStorage: ${e && e.message ? e.message : e}`);
         }
+      }
       }
       const localMedKeys = Object.keys(localStorage).filter(k => k.startsWith('gandini-medidas:'));
       for(const lk of localMedKeys){
@@ -1547,7 +1561,14 @@ async function getDay(key){
 }
 async function setDay(key, data){
   data._updatedAt = Date.now();
-  try{ localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data)); markSaved(); }catch(e){ console.error(e); }
+  try{
+    localStorage.setItem(`gandini-day:${key}`, JSON.stringify(data));
+    markSaved();
+  }catch(e){
+    console.error(e);
+    if(typeof debugLog === 'function') debugLog(`❌ ERRO GRAVE ao salvar dia ${key} localmente: ${e && e.message ? e.message : e} | ${e && e.name}`);
+    setSyncStatus(`⚠️ FALHA AO SALVAR "${key}" — armazenamento cheio. Toque pra esconder.`);
+  }
   if(fbReady && fbAuth.currentUser){
     fbDb.collection('days').doc(key).set(data).catch(e => {
       console.error('firestore write error', e);
