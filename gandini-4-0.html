@@ -3637,7 +3637,7 @@ document.body.appendChild(dpBtn);
 
 const dpPanel = document.createElement('div');
 dpPanel.id = 'debug-panel';
-dpPanel.innerHTML = '<button class="dp-close" id="debug-close">Fechar ✕</button><button class="dp-clear" id="debug-clear">Limpar</button><div id="debug-log"></div>';
+dpPanel.innerHTML = '<button class="dp-close" id="debug-close">Fechar ✕</button><button class="dp-clear" id="debug-clear">Limpar</button><button class="dp-clear" id="debug-fixday" style="right:180px;">🔧 Corrigir dia pesado</button><div id="debug-log"></div>';
 document.body.appendChild(dpPanel);
 
 dpBtn.addEventListener('click', () => {
@@ -3650,7 +3650,76 @@ dpPanel.querySelector('#debug-close').addEventListener('click', () => {
 dpPanel.querySelector('#debug-clear').addEventListener('click', () => {
   dpPanel.querySelector('#debug-log').innerHTML = '';
 });
-debugLog('App iniciado. VERSAO DEBUG: 2026-08-15-v5 (fix quota REAPLICADO).');
+dpPanel.querySelector('#debug-fixday').addEventListener('click', () => { fixHeavyDay(); });
+
+/* Recomprime uma foto já existente (base64/dataURL) para tamanho/qualidade menores */
+function recompressDataUrl(dataUrl, maxWidth, quality){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if(w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+/* Ferramenta de correção: busca um dia específico na nuvem, recomprime todas as fotos
+   (reduzindo resolução/qualidade) e, se ainda tiver muitas fotos numa mesma refeição,
+   mantém só as 4 mais recentes. Regrava só esse dia — não mexe em mais nada. */
+async function fixHeavyDay(){
+  const dayKey = prompt('Qual dia corrigir? (formato YYYY-MM-DD)', '2026-08-10');
+  if(!dayKey) return;
+  debugLog(`🔧 Iniciando correção do dia ${dayKey}...`);
+  try{
+    const doc = await fbDb.collection('days').doc(dayKey).get();
+    if(!doc.exists){ debugLog(`Dia ${dayKey} não existe na nuvem.`); return; }
+    const data = doc.data();
+    const beforeSize = JSON.stringify(data).length;
+    let photoCount = 0, droppedCount = 0;
+    for(const key of Object.keys(data)){
+      if(key.startsWith('p_') && Array.isArray(data[key])){
+        let photos = data[key];
+        if(photos.length > 4){
+          droppedCount += (photos.length - 4);
+          photos = photos.slice(-4);
+        }
+        const newPhotos = [];
+        for(const photo of photos){
+          try{
+            const recompressed = await recompressDataUrl(photo, 500, 0.45);
+            newPhotos.push(recompressed);
+            photoCount++;
+          }catch(e){
+            debugLog(`⚠️ Falha ao recomprimir uma foto de ${key}, mantendo original.`);
+            newPhotos.push(photo);
+          }
+        }
+        data[key] = newPhotos;
+      }
+    }
+    const afterSize = JSON.stringify(data).length;
+    debugLog(`🔧 ${photoCount} fotos recomprimidas (${droppedCount} descartadas por excesso). Tamanho: ${(beforeSize/1024).toFixed(0)}KB → ${(afterSize/1024).toFixed(0)}KB`);
+    data._updatedAt = Date.now();
+    await fbDb.collection('days').doc(dayKey).set(data);
+    debugLog(`✅ Salvo na nuvem.`);
+    try{
+      localStorage.setItem(`gandini-day:${dayKey}`, JSON.stringify(data));
+      debugLog(`✅ Também salvo localmente com sucesso! Dia corrigido.`);
+    }catch(e){
+      debugLog(`⚠️ Ainda não coube no localStorage deste aparelho (${e.message}), mas já está salvo na nuvem, reduzido. Tente de novo ou feche outras abas.`);
+    }
+  }catch(e){
+    debugLog(`❌ ERRO ao corrigir dia: ${e && e.message ? e.message : e}`);
+  }
+}
+
+debugLog('App iniciado. VERSAO DEBUG: 2026-08-15-v6 (ferramenta corrigir dia pesado).');
 </script>
 </body>
 </html>
