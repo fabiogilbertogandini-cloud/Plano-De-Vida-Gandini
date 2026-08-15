@@ -1252,6 +1252,29 @@ function saveSuplementosList(list){
     fbDb.collection('meta').doc('suplementos').set({ list, _updatedAt: ts }).catch(e => console.error('firestore supl write error', e));
   }
 }
+function ensureSuplementosSeedV2(){
+  try{
+    if(localStorage.getItem('gandini-suplementos-seeded-v2')) return;
+    const list = getSuplementosList();
+    const existingNames = list.map(s => (s.nome || '').toLowerCase());
+    const toAdd = [
+      { id:'sup_whey', nome:'Whey Protein' },
+      { id:'sup_psyllium', nome:'Psyllium' },
+      { id:'sup_magnesium', nome:'Magnesium' },
+      { id:'sup_omega3', nome:'Ômega 3' },
+      { id:'sup_mushroom', nome:'Mushroom Powder' },
+    ];
+    let changed = false;
+    toAdd.forEach(item => {
+      if(!existingNames.includes(item.nome.toLowerCase())){
+        list.push({ id:item.id, nome:item.nome, ativo:true });
+        changed = true;
+      }
+    });
+    if(changed) saveSuplementosList(list);
+    localStorage.setItem('gandini-suplementos-seeded-v2', '1');
+  }catch(e){}
+}
 function addSuplemento(nome){
   if(!nome || !nome.trim()) return;
   const list = getSuplementosList();
@@ -1716,6 +1739,7 @@ async function renderDiaDificilToggle(dateObj, dataOverride, rerenderFn){
 
 /* ---------------- RENDER HOJE ---------------- */
 async function renderHoje(){
+  ensureSuplementosSeedV2();
   const t = T[currentLang];
   const sections = buildSections(today, currentLang);
   const container = document.getElementById('hoje-content');
@@ -3719,7 +3743,7 @@ async function fixHeavyDay(){
   }
 }
 
-debugLog('App iniciado. VERSAO DEBUG: 2026-08-15-v6 (ferramenta corrigir dia pesado).');
+debugLog('App iniciado. VERSAO DEBUG: 2026-08-15-v7 (5 suplementos pre-cadastrados).');
 </script>
 </body>
 </html>
