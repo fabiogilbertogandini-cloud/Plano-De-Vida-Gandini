@@ -2384,20 +2384,20 @@ function getExLastReps(taskId, fallback){
 function setExLastReps(taskId, r){
   try{ localStorage.setItem('gandini-lastr-' + taskId, String(r)); }catch(e){}
 }
-function getExSets(taskId, task){
+function getExSets(taskId, dataObj){
   const key = `sets_${taskId}`;
-  if(!Array.isArray(dayData[key])) dayData[key] = [];
-  return dayData[key];
+  if(!Array.isArray(dataObj[key])) dataObj[key] = [];
+  return dataObj[key];
 }
-function saveExSets(taskId, sets){
-  dayData[`sets_${taskId}`] = sets;
-  setDay(todayKey, dayData);
+function saveExSets(taskId, sets, dataObj, dateKey){
+  dataObj[`sets_${taskId}`] = sets;
+  setDay(dateKey, dataObj);
+  if(dateKey === todayKey) dayData = dataObj;
 }
-function removeExSet(taskId, task, idx){
-  const sets = getExSets(taskId, task);
+function removeExSet(taskId, dataObj, dateKey, idx){
+  const sets = getExSets(taskId, dataObj);
   sets.splice(idx, 1);
-  saveExSets(taskId, sets);
-  renderHoje();
+  saveExSets(taskId, sets, dataObj, dateKey);
 }
 
 /* Wheel picker: vertical scroll-snap list. Returns { el, getValue } */
@@ -2446,10 +2446,10 @@ function buildWheelPicker(values, initialValue, labelSuffix){
 }
 
 /* Exercise logging modal: Style -> Weight wheel -> Reps wheel -> add set(s) */
-function openExerciseModal(task){
+function openExerciseModal(task, dataObj, dateKey, rerenderFn){
   const t = T[currentLang];
   const taskId = task.id;
-  const sets = getExSets(taskId, task);
+  const sets = getExSets(taskId, dataObj);
 
   let style = getExStyle(taskId);
   let weight = getExLastWeight(taskId, style === 'pulley' ? PULLEY_SCALE[0] : DUMBBELL_SCALE[0]);
@@ -2466,7 +2466,7 @@ function openExerciseModal(task){
   closeBtn.className = 'exmodal-close';
   closeBtn.type = 'button';
   closeBtn.textContent = '✕';
-  closeBtn.addEventListener('click', () => { overlay.remove(); renderHoje(); });
+  closeBtn.addEventListener('click', () => { overlay.remove(); rerenderFn(); });
   box.appendChild(closeBtn);
 
   const title = document.createElement('div');
@@ -2486,7 +2486,7 @@ function openExerciseModal(task){
       row.className = 'set-summary-row';
       const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
       row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span><button type="button" class="ssdel">🗑</button>`;
-      row.querySelector('.ssdel').addEventListener('click', (e) => { e.stopPropagation(); removeExSet(taskId, task, idx); sets.splice(idx,1); renderSummary(); });
+      row.querySelector('.ssdel').addEventListener('click', (e) => { e.stopPropagation(); removeExSet(taskId, dataObj, dateKey, idx); sets.splice(idx,1); renderSummary(); });
       summaryWrap.appendChild(row);
     });
   }
@@ -2568,7 +2568,7 @@ function openExerciseModal(task){
     const w = style === 'other' ? null : (weightPicker ? weightPicker.getValue() : weight);
     const r = repsPicker.getValue();
     sets.push({ peso: w, reps: r, style });
-    saveExSets(taskId, sets);
+    saveExSets(taskId, sets, dataObj, dateKey);
     if(w !== null){ weight = w; setExLastWeight(taskId, w); }
     reps = r; setExLastReps(taskId, r);
     wheelLabel.textContent = t.exSetLabel(sets.length + 1);
@@ -2578,7 +2578,7 @@ function openExerciseModal(task){
   doneBtn.type = 'button';
   doneBtn.className = 'exmodal-btn secondary';
   doneBtn.textContent = t.exDone;
-  doneBtn.addEventListener('click', () => { overlay.remove(); renderHoje(); });
+  doneBtn.addEventListener('click', () => { overlay.remove(); rerenderFn(); });
   actions.appendChild(addBtn);
   actions.appendChild(doneBtn);
   box.appendChild(actions);
@@ -2586,38 +2586,42 @@ function openExerciseModal(task){
   document.body.appendChild(overlay);
 }
 
-function buildSetsEditor(task){
+function buildSetsEditor(task, dataObj, dateKey, rerenderFn){
   const t = T[currentLang];
   const box = document.createElement('div');
   box.className = 'sets-editor';
-  const sets = getExSets(task.id, task);
+  const sets = getExSets(task.id, dataObj);
   sets.forEach((s, idx) => {
     const row = document.createElement('div');
     row.className = 'set-summary-row';
     const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
     row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span>`;
-    row.addEventListener('click', () => openExerciseModal(task));
+    row.addEventListener('click', () => openExerciseModal(task, dataObj, dateKey, rerenderFn));
     box.appendChild(row);
   });
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'set-add-btn';
   addBtn.textContent = sets.length ? t.setAdd : t.exLogBtn;
-  addBtn.addEventListener('click', () => openExerciseModal(task));
+  addBtn.addEventListener('click', () => openExerciseModal(task, dataObj, dateKey, rerenderFn));
   box.appendChild(addBtn);
   return box;
 }
 
-function renderTaskRow(task, groupIds){
+function renderTaskRow(task, groupIds, dataObj, dateKey, rerenderFn, afterCheck){
+  dataObj = dataObj || dayData;
+  dateKey = dateKey || todayKey;
+  rerenderFn = rerenderFn || renderHoje;
   const row = document.createElement('div');
-  row.className = 'task-row' + (getChecked(task.id) ? ' done' : '');
+  const isChecked = !!dataObj[task.id];
+  row.className = 'task-row' + (isChecked ? ' done' : '');
   const commentKey = `c_${task.id}`;
   const photoKey = `p_${task.id}`;
   const isMeal = MEAL_TASK_IDS.includes(task.id);
-  const hasComment = !!((dayData[commentKey] && dayData[commentKey].trim()) || (isMeal && dayData[photoKey]));
+  const hasComment = !!((dataObj[commentKey] && dataObj[commentKey].trim()) || (isMeal && dataObj[photoKey]));
   let html = `
     <div class="task-row-main">
-      <div class="check ${getChecked(task.id) ? 'done' : ''}" data-task="${task.id}">
+      <div class="check ${isChecked ? 'done' : ''}" data-task="${task.id}">
         <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div class="task-label${task.weighted ? ' clickable' : ''}">${task.label}</div>
@@ -2629,33 +2633,35 @@ function renderTaskRow(task, groupIds){
   }
   row.innerHTML = html;
   if(task.weighted){
-    row.appendChild(buildSetsEditor(task));
+    row.appendChild(buildSetsEditor(task, dataObj, dateKey, rerenderFn));
     const labelEl = row.querySelector('.task-label');
-    if(labelEl) labelEl.addEventListener('click', () => openExerciseModal(task));
+    if(labelEl) labelEl.addEventListener('click', () => openExerciseModal(task, dataObj, dateKey, rerenderFn));
   }
   if(task.time){
-    attachTimeEditor(row.querySelector('.task-row-main'), task, dayData, todayKey, renderHoje);
+    attachTimeEditor(row.querySelector('.task-row-main'), task, dataObj, dateKey, rerenderFn);
   }
   if(task.video){
     row.querySelector('.video-btn').addEventListener('click', () => window.open(task.video, '_blank'));
   }
   const checkEl = row.querySelector('.check');
-  checkEl.addEventListener('click', () => {
-    const current = !!dayData[task.id];
+  checkEl.addEventListener('click', async () => {
+    const current = !!dataObj[task.id];
     const newVal = !current;
-    dayData[task.id] = newVal;
-    setDay(todayKey, dayData);
+    dataObj[task.id] = newVal;
+    if(groupIds){
+      dataObj.treino = groupIds.some(id => !!dataObj[id]);
+    }
+    await setDay(dateKey, dataObj);
+    if(dateKey === todayKey) dayData = dataObj;
     checkEl.classList.toggle('done', newVal);
     row.classList.toggle('done', newVal);
-    updateArc();
-    renderSemanaIfActive();
-    if(groupIds){
-      dayData.treino = groupIds.some(id => !!dayData[id]);
-      setDay(todayKey, dayData);
-    }
+    if(afterCheck){ afterCheck(); }
+    else { updateArc(); renderSemanaIfActive(); }
   });
   const commentBtn = row.querySelector('.comment-btn');
-  const commentBox = attachCommentBox(row, dayData, todayKey, task.id, isMeal, commentBtn);
+  const commentBox = attachCommentBox(row, dataObj, dateKey, task.id, isMeal, commentBtn, () => {
+    if(dateKey === todayKey) dayData = dataObj;
+  });
   commentBtn.addEventListener('click', () => {
     commentBox.classList.toggle('open');
   });
@@ -2912,44 +2918,10 @@ async function renderDayDetail(dateObj){
       body.appendChild(lockBtn);
     } else {
       sec.tasks.forEach(tk => {
-        const row = document.createElement('div');
-        const done = !!data[tk.id];
-        const isMeal = MEAL_TASK_IDS.includes(tk.id);
-        const commentKey = `c_${tk.id}`;
-        const photoKey = `p_${tk.id}`;
-        const hasComment = !!((data[commentKey] && data[commentKey].trim()) || (isMeal && data[photoKey]));
-        row.className = 'task-row' + (done ? ' done' : '');
-        let html = `<div class="task-row-main">
-          <div class="check ${done ? 'done' : ''}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div class="task-label">${tk.label}</div>
-          ${tk.video ? `<button class="video-btn" type="button" title="Ver execução no YouTube">🎥</button>` : ''}
-          <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
-        </div>`;
-        if(tk.note) html += `<div class="task-note-inline">${tk.note}</div>`;
-        row.innerHTML = html;
-        if(tk.time){
-          attachTimeEditor(row.querySelector('.task-row-main'), tk, data, key, () => renderDayDetail(dateObj));
-        }
-        if(tk.video){
-          row.querySelector('.video-btn').addEventListener('click', () => window.open(tk.video, '_blank'));
-        }
-        row.querySelector('.check').addEventListener('click', async () => {
-          data[tk.id] = !data[tk.id];
-          if(sec.groupIds){
-            data.treino = sec.groupIds.some(id => !!data[id]);
-          }
-          await setDay(key, data);
-          if(key === todayKey){ dayData = data; updateArc(); renderSemanaIfActive(); }
+        const row = renderTaskRow(tk, sec.groupIds, data, key, () => renderDayDetail(dateObj), () => {
           renderDayDetail(dateObj);
           renderCalendarGrid();
         });
-        const cBtn = row.querySelector('.comment-btn');
-        const cBox = attachCommentBox(row, data, key, tk.id, isMeal, cBtn, () => {
-          if(key === todayKey) dayData = data;
-        });
-        cBtn.addEventListener('click', () => { cBox.classList.toggle('open'); });
         body.appendChild(row);
       });
       if(sec.id === 'medicamentos' && medUnlocked){
