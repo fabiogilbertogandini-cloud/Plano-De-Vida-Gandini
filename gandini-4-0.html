@@ -223,6 +223,32 @@
   .set-step-btn{ width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--ink); font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
   .set-val{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink); min-width:52px; text-align:center; }
   .set-add-btn{ align-self:flex-start; background:none; border:none; color:var(--amber); font-size:12px; cursor:pointer; padding:2px 0; font-weight:600; }
+  .set-summary-row{ display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink); cursor:pointer; }
+  .set-summary-row .ssi{ color:var(--ink-faint); min-width:16px; }
+  .set-summary-row .ssv{ flex:1; }
+  .set-summary-row .ssdel{ background:none; border:none; color:var(--ink-faint); font-size:14px; cursor:pointer; padding:0 2px; }
+  .exmodal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:300; display:flex; align-items:flex-end; justify-content:center; }
+  .exmodal-box{ width:100%; max-width:480px; background:var(--surface); border:1px solid var(--border); border-radius:18px 18px 0 0; padding:20px 18px 24px; box-sizing:border-box; max-height:88vh; overflow-y:auto; }
+  .exmodal-title{ font-family:'Fraunces',serif; font-size:17px; color:var(--ink); margin-bottom:14px; }
+  .exmodal-label{ font-size:11.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em; margin:14px 0 8px; }
+  .exmodal-style-row{ display:flex; gap:8px; }
+  .exmodal-style-btn{ flex:1; padding:10px 6px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink-dim); font-size:13px; cursor:pointer; text-align:center; }
+  .exmodal-style-btn.active{ border-color:var(--amber); color:var(--amber); background:var(--amber-dim); background:rgba(214,167,90,0.12); }
+  .wheel-row{ display:flex; gap:18px; justify-content:center; }
+  .wheel-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .wheel-col-label{ font-size:11px; color:var(--ink-faint); }
+  .wheel-picker{ position:relative; height:132px; width:96px; overflow-y:scroll; scroll-snap-type:y mandatory; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
+  .wheel-picker::-webkit-scrollbar{ display:none; }
+  .wheel-picker-pad{ height:44px; scroll-snap-align:none; flex-shrink:0; }
+  .wheel-item{ height:44px; display:flex; align-items:center; justify-content:center; scroll-snap-align:center; font-family:'IBM Plex Mono',monospace; font-size:16px; color:var(--ink-faint); }
+  .wheel-item.center{ color:var(--amber); font-weight:700; font-size:19px; }
+  .wheel-highlight{ position:absolute; top:44px; left:0; right:0; height:44px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); pointer-events:none; }
+  .exmodal-actions{ display:flex; gap:10px; margin-top:20px; }
+  .exmodal-btn{ flex:1; padding:13px; border-radius:10px; border:none; font-size:14px; font-weight:600; cursor:pointer; }
+  .exmodal-btn.primary{ background:var(--amber); color:#1A1508; }
+  .exmodal-btn.secondary{ background:var(--surface-2); color:var(--ink-dim); border:1px solid var(--border); }
+  .exmodal-close{ position:absolute; top:14px; right:16px; background:none; border:none; color:var(--ink-faint); font-size:20px; cursor:pointer; }
+  .task-label.clickable{ text-decoration:underline dotted var(--ink-faint); text-underline-offset:3px; cursor:pointer; }
 
   .pct-ring{ width:22px; height:22px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; }
   .pct-ring.today{ box-shadow:0 0 0 2px var(--amber); }
@@ -739,6 +765,8 @@ const T = {
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
     suplNewPlaceholder:'novo suplemento...', suplConfirmDelete:'Remover esse suplemento da lista? (o histórico de dias anteriores não é apagado)', repLangLabel:'Idioma do PDF:', savedAt:'Salvo às', autoSaving:'Salvando...',
     setLabel:(n)=>`Série ${n}`, setAdd:'+ Adicionar série', setRemove:'remover', setPeso:'peso', setReps:'reps',
+    exLogBtn:'Registrar série', exStyleLabel:'Equipamento', exStyleDumbbell:'Halteres', exStylePulley:'Pulley', exStyleOther:'Outro',
+    exSetLabel:(n)=>`Série ${n}`, exWeightLabel:'Carga', exRepsLabel:'Reps', exAddSet:'+ Adicionar série', exDone:'Concluir',
     logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
     gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
     fpNotSupported:'Esse navegador não suporta login por impressão digital.',
@@ -809,6 +837,8 @@ const T = {
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
     setLabel:(n)=>`Set ${n}`, setAdd:'+ Add set', setRemove:'remove', setPeso:'weight', setReps:'reps',
+    exLogBtn:'Log set', exStyleLabel:'Equipment', exStyleDumbbell:'Dumbbells', exStylePulley:'Pulley', exStyleOther:'Other',
+    exSetLabel:(n)=>`Set ${n}`, exWeightLabel:'Weight', exRepsLabel:'Reps', exAddSet:'+ Add set', exDone:'Done',
     suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:', savedAt:'Saved at', autoSaving:'Saving...',
     logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
     gcalLoading:'Google is still loading, try again in a few seconds.',
@@ -881,6 +911,8 @@ const T = {
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
     suplNewPlaceholder:'新しいサプリメント...', suplConfirmDelete:'このサプリメントをリストから削除しますか？（過去の記録は削除されません）', repLangLabel:'PDFの言語：', savedAt:'保存済み', autoSaving:'保存中...',
     setLabel:(n)=>`セット ${n}`, setAdd:'+ セットを追加', setRemove:'削除', setPeso:'重量', setReps:'レップ',
+    exLogBtn:'セットを記録', exStyleLabel:'器具', exStyleDumbbell:'ダンベル', exStylePulley:'プーリー', exStyleOther:'その他',
+    exSetLabel:(n)=>`セット ${n}`, exWeightLabel:'重量', exRepsLabel:'レップ', exAddSet:'+ セットを追加', exDone:'完了',
     logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
     gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
     fpNotSupported:'このブラウザは指紋ログインに対応していません。',
@@ -2206,6 +2238,19 @@ function attachCommentBox(container, dataObj, dataKey, taskId, isMeal, commentBt
 }
 
 /* Exercise sets logging (weight x reps x sets), per day, per exercise task id */
+const DUMBBELL_SCALE = [5,8,10,12,15,20,25,30,35,40,45,50];
+const PULLEY_SCALE = [15,25,35,45,55,65,75,85,95,105,115,125];
+function scaleForStyle(style){ return style === 'pulley' ? PULLEY_SCALE : style === 'dumbbell' ? DUMBBELL_SCALE : null; }
+function nearestInScale(scale, val){
+  if(!scale || !scale.length) return val;
+  return scale.reduce((best, v) => Math.abs(v - val) < Math.abs(best - val) ? v : best, scale[0]);
+}
+function getExStyle(taskId){
+  try{ return localStorage.getItem('gandini-style-' + taskId) || 'dumbbell'; }catch(e){ return 'dumbbell'; }
+}
+function setExStyle(taskId, style){
+  try{ localStorage.setItem('gandini-style-' + taskId, style); }catch(e){}
+}
 function getExLastWeight(taskId, fallback){
   try{
     const v = localStorage.getItem('gandini-lastw-' + taskId);
@@ -2215,47 +2260,217 @@ function getExLastWeight(taskId, fallback){
 function setExLastWeight(taskId, w){
   try{ localStorage.setItem('gandini-lastw-' + taskId, String(w)); }catch(e){}
 }
+function getExLastReps(taskId, fallback){
+  try{
+    const v = localStorage.getItem('gandini-lastr-' + taskId);
+    return v !== null ? Number(v) : fallback;
+  }catch(e){ return fallback; }
+}
+function setExLastReps(taskId, r){
+  try{ localStorage.setItem('gandini-lastr-' + taskId, String(r)); }catch(e){}
+}
 function getExSets(taskId, task){
   const key = `sets_${taskId}`;
-  if(Array.isArray(dayData[key]) && dayData[key].length) return dayData[key];
-  const startWeight = getExLastWeight(taskId, 0);
-  const sets = Array.from({ length: task.defSets || 3 }, () => ({ peso: startWeight, reps: task.defReps || 10 }));
-  dayData[key] = sets;
-  setDay(todayKey, dayData);
-  return sets;
+  if(!Array.isArray(dayData[key])) dayData[key] = [];
+  return dayData[key];
 }
 function saveExSets(taskId, sets){
   dayData[`sets_${taskId}`] = sets;
   setDay(todayKey, dayData);
 }
-function addExSet(taskId, task){
-  const sets = getExSets(taskId, task);
-  const last = sets[sets.length - 1] || { peso: getExLastWeight(taskId, 0), reps: task.defReps || 10 };
-  sets.push({ peso: last.peso, reps: last.reps });
-  saveExSets(taskId, sets);
-  renderHoje();
-}
 function removeExSet(taskId, task, idx){
   const sets = getExSets(taskId, task);
-  if(sets.length <= 1) return;
   sets.splice(idx, 1);
   saveExSets(taskId, sets);
   renderHoje();
 }
-function adjustExSetWeight(taskId, task, idx, delta){
-  const sets = getExSets(taskId, task);
-  const inc = task.inc || 5;
-  sets[idx].peso = Math.max(0, (sets[idx].peso || 0) + delta * inc);
-  saveExSets(taskId, sets);
-  setExLastWeight(taskId, sets[idx].peso);
-  renderHoje();
+
+/* Wheel picker: vertical scroll-snap list. Returns { el, getValue } */
+function buildWheelPicker(values, initialValue, labelSuffix){
+  const wrap = document.createElement('div');
+  wrap.className = 'wheel-picker';
+  const highlight = document.createElement('div');
+  highlight.className = 'wheel-highlight';
+  const padTop = document.createElement('div');
+  padTop.className = 'wheel-picker-pad';
+  wrap.appendChild(padTop);
+  let items = [];
+  values.forEach(v => {
+    const it = document.createElement('div');
+    it.className = 'wheel-item';
+    it.textContent = labelSuffix ? `${v}${labelSuffix}` : String(v);
+    it.dataset.value = v;
+    wrap.appendChild(it);
+    items.push(it);
+  });
+  const padBottom = document.createElement('div');
+  padBottom.className = 'wheel-picker-pad';
+  wrap.appendChild(padBottom);
+  wrap.appendChild(highlight);
+
+  let currentValue = values.includes(initialValue) ? initialValue : values[0];
+  function scrollToValue(v, smooth){
+    const idx = values.indexOf(v);
+    if(idx < 0) return;
+    wrap.scrollTo({ top: idx * 44, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  function updateCenterClass(){
+    const idx = Math.round(wrap.scrollTop / 44);
+    items.forEach((it, i) => it.classList.toggle('center', i === idx));
+    if(values[idx] !== undefined) currentValue = values[idx];
+  }
+  let scrollTimer = null;
+  wrap.addEventListener('scroll', () => {
+    updateCenterClass();
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => { scrollToValue(currentValue, true); }, 120);
+  });
+  setTimeout(() => { scrollToValue(currentValue, false); updateCenterClass(); }, 0);
+
+  return { el: wrap, getValue: () => currentValue };
 }
-function adjustExSetReps(taskId, task, idx, delta){
+
+/* Exercise logging modal: Style -> Weight wheel -> Reps wheel -> add set(s) */
+function openExerciseModal(task){
+  const t = T[currentLang];
+  const taskId = task.id;
   const sets = getExSets(taskId, task);
-  sets[idx].reps = Math.max(1, (sets[idx].reps || 1) + delta);
-  saveExSets(taskId, sets);
-  renderHoje();
+
+  let style = getExStyle(taskId);
+  let weight = getExLastWeight(taskId, style === 'pulley' ? PULLEY_SCALE[0] : DUMBBELL_SCALE[0]);
+  let reps = getExLastReps(taskId, task.defReps || 10);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'exmodal-overlay';
+  const box = document.createElement('div');
+  box.className = 'exmodal-box';
+  box.style.position = 'relative';
+  overlay.appendChild(box);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'exmodal-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => { overlay.remove(); renderHoje(); });
+  box.appendChild(closeBtn);
+
+  const title = document.createElement('div');
+  title.className = 'exmodal-title';
+  title.textContent = task.label;
+  box.appendChild(title);
+
+  // existing sets summary
+  const summaryWrap = document.createElement('div');
+  summaryWrap.className = 'sets-editor';
+  summaryWrap.style.margin = '0 0 6px';
+  box.appendChild(summaryWrap);
+  function renderSummary(){
+    summaryWrap.innerHTML = '';
+    sets.forEach((s, idx) => {
+      const row = document.createElement('div');
+      row.className = 'set-summary-row';
+      const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
+      row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span><button type="button" class="ssdel">🗑</button>`;
+      row.querySelector('.ssdel').addEventListener('click', (e) => { e.stopPropagation(); removeExSet(taskId, task, idx); sets.splice(idx,1); renderSummary(); });
+      summaryWrap.appendChild(row);
+    });
+  }
+  renderSummary();
+
+  // Style selector
+  const styleLabel = document.createElement('div');
+  styleLabel.className = 'exmodal-label';
+  styleLabel.textContent = t.exStyleLabel;
+  box.appendChild(styleLabel);
+  const styleRow = document.createElement('div');
+  styleRow.className = 'exmodal-style-row';
+  const styleOpts = [ ['dumbbell', t.exStyleDumbbell], ['pulley', t.exStylePulley], ['other', t.exStyleOther] ];
+  const styleBtns = {};
+  styleOpts.forEach(([key, label]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'exmodal-style-btn' + (style === key ? ' active' : '');
+    b.textContent = label;
+    b.addEventListener('click', () => {
+      style = key;
+      Object.values(styleBtns).forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      setExStyle(taskId, style);
+      rebuildWeightWheel();
+    });
+    styleRow.appendChild(b);
+    styleBtns[key] = b;
+  });
+  box.appendChild(styleRow);
+
+  // Weight + reps wheels
+  const wheelLabel = document.createElement('div');
+  wheelLabel.className = 'exmodal-label';
+  wheelLabel.textContent = t.exSetLabel(sets.length + 1);
+  box.appendChild(wheelLabel);
+  const wheelRow = document.createElement('div');
+  wheelRow.className = 'wheel-row';
+  box.appendChild(wheelRow);
+
+  let weightPicker = null;
+  const weightCol = document.createElement('div');
+  weightCol.className = 'wheel-col';
+  const weightColLabel = document.createElement('div');
+  weightColLabel.className = 'wheel-col-label';
+  weightColLabel.textContent = t.exWeightLabel;
+  weightCol.appendChild(weightColLabel);
+
+  const repsCol = document.createElement('div');
+  repsCol.className = 'wheel-col';
+  const repsColLabel = document.createElement('div');
+  repsColLabel.className = 'wheel-col-label';
+  repsColLabel.textContent = t.exRepsLabel;
+  repsCol.appendChild(repsColLabel);
+  const repsValues = Array.from({length:25}, (_,i) => i+1);
+  const repsPicker = buildWheelPicker(repsValues, reps, null);
+  repsCol.appendChild(repsPicker.el);
+
+  function rebuildWeightWheel(){
+    weightCol.querySelectorAll('.wheel-picker').forEach(el => el.remove());
+    if(style === 'other'){ return; }
+    const scale = scaleForStyle(style);
+    const initW = nearestInScale(scale, weight);
+    weightPicker = buildWheelPicker(scale, initW, ' lbs');
+    weightCol.appendChild(weightPicker.el);
+  }
+  rebuildWeightWheel();
+  wheelRow.appendChild(weightCol);
+  wheelRow.appendChild(repsCol);
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'exmodal-actions';
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'exmodal-btn primary';
+  addBtn.textContent = t.exAddSet;
+  addBtn.addEventListener('click', () => {
+    const w = style === 'other' ? null : (weightPicker ? weightPicker.getValue() : weight);
+    const r = repsPicker.getValue();
+    sets.push({ peso: w, reps: r, style });
+    saveExSets(taskId, sets);
+    if(w !== null){ weight = w; setExLastWeight(taskId, w); }
+    reps = r; setExLastReps(taskId, r);
+    wheelLabel.textContent = t.exSetLabel(sets.length + 1);
+    renderSummary();
+  });
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'button';
+  doneBtn.className = 'exmodal-btn secondary';
+  doneBtn.textContent = t.exDone;
+  doneBtn.addEventListener('click', () => { overlay.remove(); renderHoje(); });
+  actions.appendChild(addBtn);
+  actions.appendChild(doneBtn);
+  box.appendChild(actions);
+
+  document.body.appendChild(overlay);
 }
+
 function buildSetsEditor(task){
   const t = T[currentLang];
   const box = document.createElement('div');
@@ -2263,34 +2478,17 @@ function buildSetsEditor(task){
   const sets = getExSets(task.id, task);
   sets.forEach((s, idx) => {
     const row = document.createElement('div');
-    row.className = 'set-row';
-    row.innerHTML = `
-      <span class="set-idx">${idx + 1}.</span>
-      <div class="set-stepper">
-        <button type="button" class="set-step-btn" data-act="wminus">−</button>
-        <span class="set-val">${s.peso} lbs</span>
-        <button type="button" class="set-step-btn" data-act="wplus">+</button>
-      </div>
-      <div class="set-stepper">
-        <button type="button" class="set-step-btn" data-act="rminus">−</button>
-        <span class="set-val">${s.reps} ${t.setReps}</span>
-        <button type="button" class="set-step-btn" data-act="rplus">+</button>
-      </div>
-      ${sets.length > 1 ? `<button type="button" class="link-btn" data-act="del">🗑</button>` : ''}
-    `;
-    row.querySelector('[data-act="wminus"]').addEventListener('click', () => adjustExSetWeight(task.id, task, idx, -1));
-    row.querySelector('[data-act="wplus"]').addEventListener('click', () => adjustExSetWeight(task.id, task, idx, 1));
-    row.querySelector('[data-act="rminus"]').addEventListener('click', () => adjustExSetReps(task.id, task, idx, -1));
-    row.querySelector('[data-act="rplus"]').addEventListener('click', () => adjustExSetReps(task.id, task, idx, 1));
-    const delBtn = row.querySelector('[data-act="del"]');
-    if(delBtn) delBtn.addEventListener('click', () => removeExSet(task.id, task, idx));
+    row.className = 'set-summary-row';
+    const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
+    row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span>`;
+    row.addEventListener('click', () => openExerciseModal(task));
     box.appendChild(row);
   });
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'set-add-btn';
-  addBtn.textContent = t.setAdd;
-  addBtn.addEventListener('click', () => addExSet(task.id, task));
+  addBtn.textContent = sets.length ? t.setAdd : t.exLogBtn;
+  addBtn.addEventListener('click', () => openExerciseModal(task));
   box.appendChild(addBtn);
   return box;
 }
@@ -2307,7 +2505,7 @@ function renderTaskRow(task, groupIds){
       <div class="check ${getChecked(task.id) ? 'done' : ''}" data-task="${task.id}">
         <svg viewBox="0 0 24 24" fill="none" stroke="#0C0F14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div class="task-label">${task.label}</div>
+      <div class="task-label${task.weighted ? ' clickable' : ''}">${task.label}</div>
       ${task.video ? `<button class="video-btn" type="button" title="Ver execução no YouTube">🎥</button>` : ''}
       <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
     </div>`;
@@ -2317,6 +2515,8 @@ function renderTaskRow(task, groupIds){
   row.innerHTML = html;
   if(task.weighted){
     row.appendChild(buildSetsEditor(task));
+    const labelEl = row.querySelector('.task-label');
+    if(labelEl) labelEl.addEventListener('click', () => openExerciseModal(task));
   }
   if(task.time){
     attachTimeEditor(row.querySelector('.task-row-main'), task, dayData, todayKey, renderHoje);
