@@ -724,7 +724,7 @@ const T = {
     verse2: '"Busquem em primeiro lugar o Reino de Deus e a sua justiça..." — Mateus 6:33',
     tabHoje:'Hoje', tabSemana:'Semana', tabCalendario:'Calendário', tabMedidas:'Medidas',
     undoAll:'desfazer tudo de hoje', undoConfirm:'Desfazer tudo marcado hoje?',
-    sec:{ wake:'Acordar', espiritual:'Espiritual', treino:'Treino', pesagem:'Pesagem semanal', jacob:'Tempo com o Jacob',
+    sec:{ wake:'Acordar', espiritual:'Espiritual', treino:'Treino', treinoExtra:'Treino Extra', pesagem:'Pesagem semanal', jacob:'Tempo com o Jacob',
           estudo:'Estudo — REVEGO OPC', refeicoes:'Refeições', agua:'Água — meta 3.500ml', suplementos:'Suplementos', medicamentos:'Medicamentos',
           tempoChi:'Tempo com a Chi', winddown:'Encerrando o dia', recuperacao:'Treino em aberto — recuperar da semana', oracaoAlmoco:'Devocional (Almoço)' },
     task:{
@@ -760,6 +760,9 @@ const T = {
     repMedidas:'Medidas corporais', repSupl:'Suplementos', repMed:'🔒 Medicamentos (confidencial)',
     cameraBtn:'📷 Câmera', galleryBtn:'🖼️ Galeria', micBtn:'Ditar por voz',
     repoMarcar:'🔁 Esse treino é reposição de um dia perdido', repoConfirmar:'Confirmar', repoDesfazer:'desfazer',
+    extraBtnRepo:'🔁 Treino de reposição', extraBtnExtra:'➕ Treino extra', extraPickDate:'De qual dia você está repondo?',
+    extraPickDateConfirm:'Confirmar data', extraPickLetter:'Qual treino?', extraRemove:'remover treino extra',
+    extraRepoNote:(d)=>`Reposição do dia ${d}`, extraExtraNote:'Treino extra (bônus)', extraBack:'voltar',
     repoNaoTreinado:'⚠ Não treinado — porém, reposto no dia', repoFeito:'🔁 Reposição do treino do dia',
     medLockBtn:'🔒 Toque pra ver (confidencial)', medHideBtn:'🔒 Esconder de novo',
     suplPause:'pausar', suplRemove:'remover', suplResume:'reativar', suplPausedLabel:'Pausados:',
@@ -797,7 +800,7 @@ const T = {
     verse2: '"Seek first the kingdom of God and his righteousness..." — Matthew 6:33',
     tabHoje:'Today', tabSemana:'Week', tabCalendario:'Calendar', tabMedidas:'Measurements',
     undoAll:'undo everything today', undoConfirm:'Undo everything marked today?',
-    sec:{ wake:'Wake up', espiritual:'Spiritual', treino:'Workout', pesagem:'Weekly weigh-in', jacob:'Time with Jacob',
+    sec:{ wake:'Wake up', espiritual:'Spiritual', treino:'Workout', treinoExtra:'Extra Workout', pesagem:'Weekly weigh-in', jacob:'Time with Jacob',
           estudo:'Study — REVEGO OPC', refeicoes:'Meals', agua:'Water — 3,500ml goal', suplementos:'Supplements', medicamentos:'Medication',
           tempoChi:'Time with Chi', winddown:'Winding down', recuperacao:'Open workout — catch up this week', oracaoAlmoco:'Devotional (Lunch)' },
     task:{
@@ -833,6 +836,9 @@ const T = {
     repMedidas:'Body measurements', repSupl:'Supplements', repMed:'🔒 Medications (confidential)',
     cameraBtn:'📷 Camera', galleryBtn:'🖼️ Gallery', micBtn:'Voice dictation',
     repoMarcar:'🔁 This workout is a make-up for a missed day', repoConfirmar:'Confirm', repoDesfazer:'undo',
+    extraBtnRepo:'🔁 Make-up workout', extraBtnExtra:'➕ Extra workout', extraPickDate:'Which day are you making up?',
+    extraPickDateConfirm:'Confirm date', extraPickLetter:'Which workout?', extraRemove:'remove extra workout',
+    extraRepoNote:(d)=>`Make-up for ${d}`, extraExtraNote:'Extra (bonus) workout', extraBack:'back',
     repoNaoTreinado:'⚠ No workout — however, made up on', repoFeito:'🔁 Make-up for the workout from',
     medLockBtn:'🔒 Tap to view (confidential)', medHideBtn:'🔒 Hide again',
     suplPause:'pause', suplRemove:'remove', suplResume:'resume', suplPausedLabel:'Paused:',
@@ -870,7 +876,7 @@ const T = {
     verse2: '「まず神の国と神の義を求めなさい...」 — マタイによる福音書 6:33',
     tabHoje:'今日', tabSemana:'週間', tabCalendario:'カレンダー', tabMedidas:'測定',
     undoAll:'今日のチェックを全て取り消す', undoConfirm:'今日のチェックを全て取り消しますか？',
-    sec:{ wake:'起床', espiritual:'霊的な時間', treino:'トレーニング', pesagem:'週間体重測定', jacob:'ジェイコブとの時間',
+    sec:{ wake:'起床', espiritual:'霊的な時間', treino:'トレーニング', treinoExtra:'追加トレーニング', pesagem:'週間体重測定', jacob:'ジェイコブとの時間',
           estudo:'勉強 — REVEGO OPC', refeicoes:'食事', agua:'水分 — 目標3,500ml', suplementos:'サプリメント', medicamentos:'薬',
           tempoChi:'チーとの時間', winddown:'一日の終わり', recuperacao:'未完了のトレーニング — 今週分を補う', oracaoAlmoco:'デボーション（昼食時）' },
     task:{
@@ -906,6 +912,9 @@ const T = {
     repMedidas:'体測定', repSupl:'サプリメント', repMed:'🔒 服薬（非公開）',
     cameraBtn:'📷 カメラ', galleryBtn:'🖼️ ギャラリー', micBtn:'音声入力',
     repoMarcar:'🔁 このトレーニングは見送った日の振替です', repoConfirmar:'確定', repoDesfazer:'取り消す',
+    extraBtnRepo:'🔁 振替トレーニング', extraBtnExtra:'➕ 追加トレーニング', extraPickDate:'どの日の振替ですか？',
+    extraPickDateConfirm:'日付を確定', extraPickLetter:'どのトレーニング？', extraRemove:'追加トレーニングを削除',
+    extraRepoNote:(d)=>`${d}の振替`, extraExtraNote:'追加（ボーナス）トレーニング', extraBack:'戻る',
     repoNaoTreinado:'⚠ 未実施 — ただし、振替日：', repoFeito:'🔁 振替トレーニング — 元の日付：',
     medLockBtn:'🔒 タップして表示（非公開）', medHideBtn:'🔒 再び隠す',
     suplPause:'一時停止', suplRemove:'削除', suplResume:'再開', suplPausedLabel:'一時停止中：',
@@ -1157,7 +1166,20 @@ function dayOfYear(d){
 }
 
 
-function buildSections(date, lang){
+function buildExList(letra, lang){
+  const t = T[lang];
+  return WORKOUTS[letra].map(ex => ({
+    id: `tr_${ex.id}`,
+    label: exLabel(ex, lang) + (exGroup(ex, lang) ? ` [${exGroup(ex, lang)}]` : ''),
+    note: exNote(ex, lang),
+    video: ex.video || null,
+    weighted: !!ex.weighted,
+    inc: ex.inc || 5,
+    defSets: ex.defSets || 3,
+    defReps: ex.defReps || 10,
+  }));
+}
+function buildSections(date, lang, extra){
   const t = T[lang];
   const type = getDayType(date);
   const wd = date.getDay();
@@ -1174,16 +1196,7 @@ function buildSections(date, lang){
       {id:'meditacao', label:t.task.meditacao},
     ]});
     const letra = TREINO_LETRA[wd];
-    const exList = WORKOUTS[letra].map(ex => ({
-      id: `tr_${ex.id}`,
-      label: exLabel(ex, lang) + (exGroup(ex, lang) ? ` [${exGroup(ex, lang)}]` : ''),
-      note: exNote(ex, lang),
-      video: ex.video || null,
-      weighted: !!ex.weighted,
-      inc: ex.inc || 5,
-      defSets: ex.defSets || 3,
-      defReps: ex.defReps || 10,
-    }));
+    const exList = buildExList(letra, lang);
     sections.push({ id:'treino', time:'5h25', title:`${t.sec.treino} ${letra} (${TREINO_GROUP[letra][lang]})`, tasks: exList,
       groupIds: exList.map(e => e.id) });
   } else if(type === 'descanso'){
@@ -1204,6 +1217,16 @@ function buildSections(date, lang){
       {id:'oracao', label:t.task.oracaoSimples, note: prayerNote},
       {id:'igreja', label:t.task.igreja},
     ]});
+  }
+
+  if(type !== 'treino'){
+    if(extra && extra.letra){
+      const exList = buildExList(extra.letra, lang);
+      sections.push({ id:'treino', time:'', title:`${t.sec.treinoExtra} ${extra.letra} (${TREINO_GROUP[extra.letra][lang]})`, tasks: exList,
+        groupIds: exList.map(e => e.id), isExtraTreino:true, extraInfo: extra });
+    } else {
+      sections.push({ id:'extra-treino-picker', time:'', title:t.sec.treinoExtra, tasks:[], isExtraPicker:true });
+    }
   }
 
   if(wd === 4 || wd === 5){
@@ -1787,7 +1810,7 @@ async function renderDiaDificilToggle(dateObj, dataOverride, rerenderFn){
 async function renderHoje(){
   ensureSuplementosSeedV2();
   const t = T[currentLang];
-  const sections = buildSections(today, currentLang);
+  const sections = buildSections(today, currentLang, dayData.extraTreino);
   const container = document.getElementById('hoje-content');
   container.innerHTML = '';
   container.classList.remove('loading');
@@ -1820,12 +1843,17 @@ async function renderHoje(){
 
     if(sec.isWater){
       body.appendChild(renderWater());
+    } else if(sec.isExtraPicker){
+      body.appendChild(renderExtraTreinoPicker(dayData, todayKey, renderHoje));
     } else {
       sec.tasks.forEach(tk => body.appendChild(renderTaskRow(tk, sec.groupIds)));
     }
 
     if(sec.id === 'treino'){
       body.appendChild(renderReposicaoControl(dayData, todayKey, renderHoje));
+      if(sec.isExtraTreino){
+        body.appendChild(renderExtraTreinoInfo(sec.extraInfo, todayKey, dayData, renderHoje));
+      }
     }
 
     if(sec.id === 'medicamentos' && medUnlocked){
@@ -2052,6 +2080,93 @@ async function desfazerReposicao(currentKey){
     delete missed.reposto_em;
     await setDay(missedKeyStr, missed);
   }
+}
+async function removeExtraTreino(dateKey, dataObj){
+  const rep = dataObj.extraTreino && dataObj.extraTreino.reposicaoDe;
+  delete dataObj.extraTreino;
+  await setDay(dateKey, dataObj);
+  if(rep){ await desfazerReposicao(dateKey); }
+}
+function renderExtraTreinoPicker(dataObj, dateKey, rerenderFn){
+  const t = T[currentLang];
+  const wrap = document.createElement('div');
+
+  function showChooser(){
+    wrap.innerHTML = '';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+    const repoBtn = document.createElement('button');
+    repoBtn.type = 'button'; repoBtn.className = 'btn-secondary'; repoBtn.textContent = t.extraBtnRepo;
+    const extraBtn = document.createElement('button');
+    extraBtn.type = 'button'; extraBtn.className = 'btn-secondary'; extraBtn.textContent = t.extraBtnExtra;
+    btnRow.appendChild(repoBtn); btnRow.appendChild(extraBtn);
+    wrap.appendChild(btnRow);
+    repoBtn.addEventListener('click', () => showDatePicker());
+    extraBtn.addEventListener('click', () => showLetterPicker(null));
+  }
+
+  function showDatePicker(){
+    wrap.innerHTML = `
+      <div style="font-size:12px; color:var(--ink-dim); margin-bottom:8px;">${t.extraPickDate}</div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+        <input type="date" id="extra-date-input" style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px; font-size:13px; box-sizing:border-box;" max="${dateKey}">
+        <button class="btn-secondary" id="extra-date-confirm" style="padding:8px 16px;">${t.extraPickDateConfirm}</button>
+      </div>
+      <span class="link-btn" id="extra-back">${t.extraBack}</span>
+    `;
+    wrap.querySelector('#extra-back').addEventListener('click', () => showChooser());
+    wrap.querySelector('#extra-date-confirm').addEventListener('click', () => {
+      const val = wrap.querySelector('#extra-date-input').value;
+      if(!val) return;
+      showLetterPicker(val);
+    });
+  }
+
+  function showLetterPicker(missedDate){
+    wrap.innerHTML = '';
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:12px; color:var(--ink-dim); margin-bottom:8px;';
+    label.textContent = t.extraPickLetter;
+    wrap.appendChild(label);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px;';
+    ['A','B','C'].forEach(letra => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'exmodal-style-btn';
+      b.textContent = `${letra} — ${TREINO_GROUP[letra][currentLang]}`;
+      b.addEventListener('click', async () => {
+        dataObj.extraTreino = { letra, reposicaoDe: missedDate || null };
+        await setDay(dateKey, dataObj);
+        if(missedDate){ await marcarReposicao(dateKey, missedDate); }
+        rerenderFn();
+      });
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+    const back = document.createElement('span');
+    back.className = 'link-btn';
+    back.style.marginTop = '8px';
+    back.style.display = 'inline-block';
+    back.textContent = t.extraBack;
+    back.addEventListener('click', () => missedDate ? showDatePicker() : showChooser());
+    wrap.appendChild(back);
+  }
+
+  showChooser();
+  return wrap;
+}
+function renderExtraTreinoInfo(extra, dateKey, dataObj, rerenderFn){
+  const t = T[currentLang];
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); font-size:12px; color:var(--sage); display:flex; align-items:center; gap:8px; justify-content:space-between;';
+  const note = extra.reposicaoDe ? t.extraRepoNote(fmtKeyDisplay(extra.reposicaoDe)) : t.extraExtraNote;
+  wrap.innerHTML = `<span>${note}</span><span class="link-btn" id="extra-remove">${t.extraRemove}</span>`;
+  wrap.querySelector('#extra-remove').addEventListener('click', async () => {
+    await removeExtraTreino(dateKey, dataObj);
+    rerenderFn();
+  });
+  return wrap;
 }
 function fmtKeyDisplay(k){
   const [y,m,d] = k.split('-');
@@ -2598,7 +2713,7 @@ function adjustWater(delta){
 function updateArc(){ updateArcFor(today, dayData); }
 
 function updateArcFor(dateObj, data){
-  const sections = buildSections(dateObj, currentLang);
+  const sections = buildSections(dateObj, currentLang, data.extraTreino);
   let total = 0, done = 0;
   sections.forEach(sec => {
     if(sec.isWater){
@@ -2714,7 +2829,7 @@ async function renderDayDetail(dateObj){
   renderDateHeader(dateObj, getDayType(dateObj));
   updateArcFor(dateObj, data);
   renderDiaDificilToggle(dateObj, data, () => renderDayDetail(dateObj));
-  const sections = buildSections(dateObj, currentLang);
+  const sections = buildSections(dateObj, currentLang, data.extraTreino);
   const container = document.getElementById('cal-detail');
   container.innerHTML = '';
 
@@ -2783,6 +2898,8 @@ async function renderDayDetail(dateObj){
       });
       commentBtn.addEventListener('click', () => { commentBox.classList.toggle('open'); });
       body.appendChild(wrap);
+    } else if(sec.isExtraPicker){
+      body.appendChild(renderExtraTreinoPicker(data, key, () => renderDayDetail(dateObj)));
     } else if(sec.id === 'medicamentos' && !medUnlocked){
       const lockBtn = document.createElement('button');
       lockBtn.className = 'btn-secondary';
@@ -2845,6 +2962,9 @@ async function renderDayDetail(dateObj){
       }
       if(sec.id === 'treino'){
         body.appendChild(renderReposicaoControl(data, key, () => renderDayDetail(dateObj)));
+        if(sec.isExtraTreino){
+          body.appendChild(renderExtraTreinoInfo(sec.extraInfo, key, data, () => renderDayDetail(dateObj)));
+        }
       }
     }
     if(sec.note){
