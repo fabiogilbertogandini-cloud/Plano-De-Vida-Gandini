@@ -198,6 +198,8 @@
   .comment-btn.has{ color:var(--amber); border-color:var(--amber-dim); }
   .video-btn{ background:none; border:1px solid var(--border); color:var(--ink-faint); width:22px; height:22px; border-radius:50%;
     font-size:11px; line-height:1; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+  .audio-btn{ background:none; border:1px solid var(--amber-dim); color:var(--amber); width:22px; height:22px; border-radius:50%;
+    font-size:11px; line-height:1; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
   .task-comment-box{ display:none; margin:6px 0 0 36px; }
   .task-comment-box.open{ display:block; }
   .task-comment-box textarea{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
@@ -1192,7 +1194,7 @@ function buildSections(date, lang, extra){
   if(type === 'treino'){
     sections.push({ id:'wake', time:'5h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar5}] });
     sections.push({ id:'espiritual', time:'5h05', title:t.sec.espiritual, tasks:[
-      {id:'oracao', label:t.task.oracaoTreino, note: prayerNote},
+      {id:'oracao', label:t.task.oracaoTreino, note: prayerNote, audio:'oracao-diaria.html'},
       {id:'meditacao', label:t.task.meditacao},
     ]});
     const letra = TREINO_LETRA[wd];
@@ -1202,19 +1204,19 @@ function buildSections(date, lang, extra){
   } else if(type === 'descanso'){
     sections.push({ id:'wake', time:'6h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar6}] });
     sections.push({ id:'espiritual', time:'6h05', title:t.sec.espiritual, tasks:[
-      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote},
+      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote, audio:'oracao-diaria.html'},
     ]});
   } else if(type === 'sabado'){
     sections.push({ id:'wake', time:'6h', title:t.sec.wake, tasks:[{id:'acordar', label:t.task.acordar6}] });
     sections.push({ id:'espiritual', time:'', title:t.sec.espiritual, tasks:[
-      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote},
+      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote, audio:'oracao-diaria.html'},
     ]});
     sections.push({ id:'jacob', time:'', title:t.sec.jacob, tasks:[
       {id:'jacob', label:t.task.jacob},
     ]});
   } else if(type === 'domingo'){
     sections.push({ id:'espiritual', time:'', title:t.sec.espiritual, tasks:[
-      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote},
+      {id:'oracao', label:t.task.oracaoSimples, note: prayerNote, audio:'oracao-diaria.html'},
       {id:'igreja', label:t.task.igreja},
     ]});
   }
@@ -2626,6 +2628,7 @@ function renderTaskRow(task, groupIds, dataObj, dateKey, rerenderFn, afterCheck)
       </div>
       <div class="task-label${task.weighted ? ' clickable' : ''}">${task.label}</div>
       ${task.video ? `<button class="video-btn" type="button" title="Ver execução no YouTube">🎥</button>` : ''}
+      ${task.audio ? `<button class="audio-btn" type="button" title="Ouvir oração guiada">🕯️</button>` : ''}
       <button class="comment-btn ${hasComment ? 'has' : ''}" type="button">+</button>
     </div>`;
   if(task.note){
@@ -2642,6 +2645,9 @@ function renderTaskRow(task, groupIds, dataObj, dateKey, rerenderFn, afterCheck)
   }
   if(task.video){
     row.querySelector('.video-btn').addEventListener('click', () => window.open(task.video, '_blank'));
+  }
+  if(task.audio){
+    row.querySelector('.audio-btn').addEventListener('click', () => window.open(task.audio, '_blank'));
   }
   const checkEl = row.querySelector('.check');
   checkEl.addEventListener('click', async () => {
