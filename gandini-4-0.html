@@ -772,6 +772,7 @@ const T = {
     setLabel:(n)=>`Série ${n}`, setAdd:'+ Adicionar série', setRemove:'remover', setPeso:'peso', setReps:'reps',
     exLogBtn:'Registrar série', exStyleLabel:'Equipamento', exStyleDumbbell:'Halteres', exStylePulley:'Pulley', exStyleOther:'Outro',
     exSetLabel:(n)=>`Série ${n}`, exWeightLabel:'Carga', exRepsLabel:'Reps', exAddSet:'+ Adicionar série', exDone:'Concluir',
+    exLastLabel:'Última vez', exQuickRepeat:'✓ Repetir',
     logoutBtn:'🔒 Sair', logoutConfirm:'Sair do Gandini 4.0? Você vai precisar da senha ou da digital pra entrar de novo. Seus dados continuam salvos.',
     gcalLoading:'Google ainda carregando, tenta de novo em alguns segundos.',
     fpNotSupported:'Esse navegador não suporta login por impressão digital.',
@@ -847,6 +848,7 @@ const T = {
     setLabel:(n)=>`Set ${n}`, setAdd:'+ Add set', setRemove:'remove', setPeso:'weight', setReps:'reps',
     exLogBtn:'Log set', exStyleLabel:'Equipment', exStyleDumbbell:'Dumbbells', exStylePulley:'Pulley', exStyleOther:'Other',
     exSetLabel:(n)=>`Set ${n}`, exWeightLabel:'Weight', exRepsLabel:'Reps', exAddSet:'+ Add set', exDone:'Done',
+    exLastLabel:'Last time', exQuickRepeat:'✓ Repeat',
     suplNewPlaceholder:'new supplement...', suplConfirmDelete:'Remove this supplement from the list? (previous days\' history is not deleted)', repLangLabel:'PDF language:', savedAt:'Saved at', autoSaving:'Saving...',
     logoutBtn:'🔒 Log out', logoutConfirm:'Log out of Gandini 4.0? You\'ll need your password or fingerprint to sign in again. Your data stays saved.',
     gcalLoading:'Google is still loading, try again in a few seconds.',
@@ -924,6 +926,7 @@ const T = {
     setLabel:(n)=>`セット ${n}`, setAdd:'+ セットを追加', setRemove:'削除', setPeso:'重量', setReps:'レップ',
     exLogBtn:'セットを記録', exStyleLabel:'器具', exStyleDumbbell:'ダンベル', exStylePulley:'プーリー', exStyleOther:'その他',
     exSetLabel:(n)=>`セット ${n}`, exWeightLabel:'重量', exRepsLabel:'レップ', exAddSet:'+ セットを追加', exDone:'完了',
+    exLastLabel:'前回', exQuickRepeat:'✓ 繰り返す',
     logoutBtn:'🔒 ログアウト', logoutConfirm:'Gandini 4.0からログアウトしますか？次回はパスワードまたは指紋が必要です。データは保存されたままです。',
     gcalLoading:'Googleを読み込み中です。数秒後にもう一度お試しください。',
     fpNotSupported:'このブラウザは指紋ログインに対応していません。',
@@ -2386,6 +2389,9 @@ function getExLastReps(taskId, fallback){
 function setExLastReps(taskId, r){
   try{ localStorage.setItem('gandini-lastr-' + taskId, String(r)); }catch(e){}
 }
+function hasExHistory(taskId){
+  try{ return localStorage.getItem('gandini-lastw-' + taskId) !== null || localStorage.getItem('gandini-lastr-' + taskId) !== null; }catch(e){ return false; }
+}
 function getExSets(taskId, dataObj){
   const key = `sets_${taskId}`;
   if(!Array.isArray(dataObj[key])) dataObj[key] = [];
@@ -2601,6 +2607,25 @@ function buildSetsEditor(task, dataObj, dateKey, rerenderFn){
     row.addEventListener('click', () => openExerciseModal(task, dataObj, dateKey, rerenderFn));
     box.appendChild(row);
   });
+  if(hasExHistory(task.id)){
+    const style = getExStyle(task.id);
+    const w = style === 'other' ? null : getExLastWeight(task.id, null);
+    const r = getExLastReps(task.id, task.defReps || 10);
+    const styleLbl = style === 'pulley' ? t.exStylePulley : style === 'other' ? t.exStyleOther : t.exStyleDumbbell;
+    const quickRow = document.createElement('div');
+    quickRow.className = 'set-summary-row';
+    quickRow.style.cursor = 'default';
+    const wText = w !== null ? `${w} lbs × ` : '';
+    quickRow.innerHTML = `<span class="ssi">↻</span><span class="ssv">${t.exLastLabel}: ${wText}${r} ${t.setReps} (${styleLbl})</span><button type="button" class="ssdel" style="color:var(--amber); font-size:12px; font-weight:600;">${t.exQuickRepeat}</button>`;
+    quickRow.querySelector('.ssdel').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentSets = getExSets(task.id, dataObj);
+      currentSets.push({ peso: w, reps: r, style });
+      saveExSets(task.id, currentSets, dataObj, dateKey);
+      rerenderFn();
+    });
+    box.appendChild(quickRow);
+  }
   const addBtn = document.createElement('button');
   addBtn.type = 'button';
   addBtn.className = 'set-add-btn';
