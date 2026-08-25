@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Oração Diária — Fábio</title>
+<style>
+  :root{
+    --bg:#0c1018;
+    --card:#141a26;
+    --card-border:#232b3d;
+    --amber:#e2a23f;
+    --amber-dim:#8a672c;
+    --text:#f2ede4;
+    --text-dim:#9aa3b5;
+    --text-faint:#5c6478;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:radial-gradient(ellipse at 50% -10%, #1a2133 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100%;
+    padding:28px 20px 40px;
+  }
+  .verse{
+    font-family:Georgia,"Times New Roman",serif;
+    font-style:italic;
+    color:var(--text-dim);
+    font-size:13px;
+    text-align:center;
+    letter-spacing:.02em;
+    margin-bottom:18px;
+    opacity:.85;
+  }
+  .langs{
+    display:flex;
+    gap:6px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:999px;
+    padding:4px;
+    margin-bottom:34px;
+  }
+  .langs button{
+    border:none;
+    background:transparent;
+    color:var(--text-faint);
+    font-size:13px;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .langs button.active{
+    background:var(--amber);
+    color:#221704;
+  }
+
+  /* flame */
+  .flame-wrap{
+    width:150px;height:190px;
+    display:flex;align-items:flex-end;justify-content:center;
+    margin:8px 0 30px;
+    position:relative;
+  }
+  .flame{
+    width:46px;height:64px;
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    background:radial-gradient(circle at 50% 65%, #fff3d0 0%, var(--amber) 40%, #a5541b 80%, transparent 100%);
+    filter:blur(0.3px);
+    transform-origin:center bottom;
+    box-shadow:0 0 40px 10px rgba(226,162,63,.25);
+    animation:flame-idle 3.4s ease-in-out infinite;
+  }
+  .base{
+    position:absolute;bottom:0;
+    width:70px;height:14px;
+    background:linear-gradient(180deg,#2a3346,#171d2b);
+    border-radius:6px;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset;
+  }
+  @keyframes flame-idle{
+    0%,100%{transform:scaleY(1) scaleX(1) rotate(-1deg);}
+    50%{transform:scaleY(1.06) scaleX(.97) rotate(1deg);}
+  }
+  .flame-wrap.speaking .flame{ animation:flame-speak 0.55s ease-in-out infinite; }
+  @keyframes flame-speak{
+    0%{transform:scaleY(1) scaleX(1) rotate(-2deg);}
+    25%{transform:scaleY(1.12) scaleX(.92) rotate(2deg);}
+    50%{transform:scaleY(.95) scaleX(1.05) rotate(-1deg);}
+    75%{transform:scaleY(1.08) scaleX(.96) rotate(2deg);}
+    100%{transform:scaleY(1) scaleX(1) rotate(-2deg);}
+  }
+  .flame-wrap.paused .flame{ animation:none; opacity:.4; }
+
+  .segment-label{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .segment-sub{
+    font-size:14px;
+    color:var(--text-dim);
+    text-align:center;
+    max-width:340px;
+    margin-bottom:28px;
+    min-height:20px;
+  }
+  .timer{
+    font-variant-numeric:tabular-nums;
+    font-size:34px;
+    font-weight:300;
+    color:var(--text);
+    margin-bottom:6px;
+    display:none;
+  }
+  .timer.show{display:block;}
+
+  .dots{
+    display:flex;
+    gap:10px;
+    margin:6px 0 30px;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--card-border);
+    transition:background .3s;
+  }
+  .dot.done{background:var(--amber-dim);}
+  .dot.active{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+
+  .controls{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-top:8px;
+  }
+  .play-btn{
+    width:74px;height:74px;
+    border-radius:50%;
+    border:2px solid var(--amber);
+    background:rgba(226,162,63,.08);
+    color:var(--amber);
+    font-size:26px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn{
+    width:44px;height:44px;
+    border-radius:50%;
+    border:1px solid var(--card-border);
+    background:var(--card);
+    color:var(--text-dim);
+    font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn:active{background:#1d2534;}
+
+  .amen{
+    display:none;
+    text-align:center;
+    max-width:320px;
+  }
+  .amen.show{display:block;}
+  .amen h2{
+    font-family:Georgia,serif;
+    font-style:italic;
+    color:var(--amber);
+    font-weight:400;
+    font-size:26px;
+    margin:0 0 10px;
+  }
+  .amen p{color:var(--text-dim);font-size:14px;line-height:1.6;}
+
+  .settings{
+    margin-top:36px;
+    width:100%;
+    max-width:340px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:14px 16px;
+  }
+  .settings summary{
+    color:var(--text-dim);
+    font-size:13px;
+    cursor:pointer;
+    list-style:none;
+  }
+  .settings summary::-webkit-details-marker{display:none;}
+  .settings-row{
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .settings-row label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;}
+  .settings-row select, .settings-row input[type=range]{
+    background:#0c1018;
+    color:var(--text);
+    border:1px solid var(--card-border);
+    border-radius:8px;
+    padding:8px;
+    font-size:13px;
+  }
+  .note{
+    margin-top:22px;
+    font-size:11.5px;
+    color:var(--text-faint);
+    text-align:center;
+    max-width:300px;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+  <div class="verse" id="verseTop">Provérbios 16:3</div>
+
+  <div class="langs" id="langs">
+    <button data-lang="pt" class="active">PT</button>
+    <button data-lang="en">EN</button>
+    <button data-lang="ja">日本語</button>
+  </div>
+
+  <div class="flame-wrap" id="flameWrap">
+    <div class="flame"></div>
+    <div class="base"></div>
+  </div>
+
+  <div class="segment-label" id="segLabel">Pronto para começar</div>
+  <div class="segment-sub" id="segSub">Toque em play. Fones no ouvido, sem pressa.</div>
+  <div class="timer" id="timerDisplay">1:00</div>
+
+  <div class="dots" id="dots">
+    <div class="dot" data-seg="speak"></div>
+    <div class="dot" data-seg="silence"></div>
+    <div class="dot" data-seg="bible"></div>
+    <div class="dot" data-seg="free"></div>
+  </div>
+
+  <div class="controls">
+    <button class="icon-btn" id="restartBtn" title="Reiniciar">↺</button>
+    <button class="play-btn" id="playBtn">▶</button>
+    <button class="icon-btn" id="skipBtn" title="Pular etapa">⏭</button>
+  </div>
+
+  <div class="amen" id="amenScreen">
+    <h2 id="amenTitle">Amém.</h2>
+    <p id="amenBody">Entrega ao Senhor tudo o que fizeres, e os teus planos serão bem-sucedidos.</p>
+  </div>
+
+  <details class="settings">
+    <summary>Voz e ritmo ⚙</summary>
+    <div class="settings-row">
+      <label>Voz</label>
+      <select id="voiceSelect"></select>
+    </div>
+    <div class="settings-row">
+      <label>Velocidade</label>
+      <input type="range" id="rateRange" min="0.6" max="1.1" step="0.05" value="0.85">
+    </div>
+  </details>
+
+  <div class="note">Mantenha a tela ligada (pode escurecer o brilho) — a maioria dos celulares corta a leitura de voz quando a tela trava.</div>
+
+<script>
+const CONTENT = {
+  pt: {
+    verse: "Provérbios 16:3",
+    ready_label: "Pronto para começar",
+    ready_sub: "Toque em play. Fones no ouvido, sem pressa.",
+    labels: { speak:"Falar", silence:"Silêncio", bible:"Bíblia", free:"Oração livre" },
+    subs: {
+      silence:"Fique quieto. Deixe o Espírito Santo falar.",
+      bible:"Abra sua Bíblia agora.",
+      free:"Fale com Deus como seu Pai."
+    },
+    speakText: "Senhor, eu levanto o Blum Western Team e meus antigos colegas da Sunrise. Como está escrito em Colossenses três, vinte e três: tudo o que eu fizer, que seja para Ti, e não para os homens. Oro pelo Ron e por toda a equipe Blum Western — por unidade, criatividade e o Teu favor em cada interação e decisão. Dá-me discernimento para enxergar além das transações, para servir os clientes com excelência e cuidado, refletindo a Tua administração. Dá-me sabedoria para entender os produtos da Blum não só tecnicamente, mas como ferramentas que elevam vidas e espaços. Levanto meus colegas da Sunrise: que os caminhos deles sejam abençoados, e que nossa história continue dando fruto. Senhor, abre meus olhos e meus ouvidos. Faz de mim um comunicador claro, cortando o desnecessário, indo direto ao que importa. Quando eu escrever, ajuda-me a focar no conteúdo real, não na decoração. Ensina-me a reconhecer a voz do Espírito Santo no momento em que eu precisar, e que essa mesma clareza se transforme em presença verdadeira: para a Chi, e para o Jacob. E Senhor, pedimos o dom de uma menina para a nossa família, no Teu tempo, pela Tua graça. Entregamos essa esperança nas Tuas mãos, do jeito que entregamos tudo o mais.",
+    silenceInstr: "Um minuto de silêncio. Fique quieto. Deixe o Espírito Santo falar.",
+    bibleInstr: "Abra sua Bíblia agora. Um minuto de leitura.",
+    freeInstr: "Um minuto de oração livre. Fale com Deus como seu Pai.",
+    closing: "Amém. Provérbios dezesseis, três: entrega ao Senhor tudo o que fizeres, e os teus planos serão bem-sucedidos.",
+    amenTitle: "Amém.",
+    amenBody: "Entrega ao Senhor tudo o que fizeres, e os teus planos serão bem-sucedidos."
+  },
+  en: {
+    verse: "Proverbs 16:3",
+    ready_label: "Ready to begin",
+    ready_sub: "Tap play. Headphones in, no rush.",
+    labels: { speak:"Speak", silence:"Silence", bible:"Bible", free:"Free prayer" },
+    subs: {
+      silence:"Be still. Let the Holy Spirit speak.",
+      bible:"Open your Bible now.",
+      free:"Speak to God as your Father."
+    },
+    speakText: "Lord, I lift up the Blum Western Team and my former colleagues at Sunrise. As it is written in Colossians three twenty-three: whatever I do, I do it for You, not for men. I pray for Ron and the whole Blum Western Team, for unity, creativity, and Your favor in every interaction and decision. Give me discernment to see beyond transactions, to serve clients with excellence and care, reflecting Your stewardship. Give me wisdom to understand Blum's products not just technically, but as tools that elevate lives and spaces. I lift up my Sunrise colleagues: may their paths be blessed, and may our shared history keep bearing fruit. Lord, open my eyes and my ears. Make me a clear communicator, cutting what is unnecessary, going straight to what matters. When I write, help me focus on the real content, not decoration. Teach me to recognize the voice of the Holy Spirit the moment I need it, and let that same clarity turn into true presence: for Chi, and for Jacob. And Lord, we ask for the gift of a baby girl for our family, in Your timing, by Your grace. We place this hope in Your hands, the same way we place everything else.",
+    silenceInstr: "One minute of silence. Be still. Let the Holy Spirit speak.",
+    bibleInstr: "Open your Bible now. One minute of reading.",
+    freeInstr: "One minute of free prayer. Speak to God as your Father.",
+    closing: "Amen. Proverbs sixteen, three: commit to the Lord whatever you do, and He will establish your plans.",
+    amenTitle: "Amen.",
+    amenBody: "Commit to the Lord whatever you do, and He will establish your plans."
+  },
+  ja: {
+    verse: "箴言 16:3",
+    ready_label: "始める準備ができました",
+    ready_sub: "再生をタップしてください。イヤホンをつけて、焦らずに。",
+    labels: { speak:"祈りの言葉", silence:"沈黙", bible:"聖書", free:"自由な祈り" },
+    subs: {
+      silence:"静まって、聖霊の声を聞いてください。",
+      bible:"今、聖書を開いてください。",
+      free:"父なる神に語りかけてください。"
+    },
+    speakText: "主よ、ブルム・ウエスタン・チームとサンライズの元同僚たちのために祈ります。コロサイ人への手紙三章二十三節にあるように、何をするにも、人のためではなく、あなたのためにします。ロンとブルム・ウエスタン・チーム全体のために祈ります。一致と創造性、そしてすべての判断にあなたの恵みがありますように。取引の先を見る識別力を与えてください。お客様に卓越したケアで仕えることができますように。ブルムの製品を技術としてだけでなく、人々の生活と空間を高める道具として理解する知恵を与えてください。サンライズの同僚たちのために祈ります。彼らの道が祝福されますように、私たちの歩んできた歴史がこれからも実を結びますように。主よ、私の目と耳を開いてください。明確に伝える者にしてください。不要なものを削り、大切なことに真っ直ぐ向かえますように。文章を書くとき、装飾ではなく本当の内容に集中できますように。必要な時に聖霊の声を聞き分けられるように教えてください。その明晰さが、チーとジェイコブへの本当の存在感につながりますように。主よ、私たちの家族に女の子を授けてください。あなたの時に、あなたの恵みによって。他のすべてを委ねるように、この望みもあなたに委ねます。",
+    silenceInstr: "一分間の沈黙です。静まって、聖霊の声を聞いてください。",
+    bibleInstr: "今、聖書を開いてください。一分間、読んでください。",
+    freeInstr: "一分間の自由な祈りです。父なる神に語りかけてください。",
+    closing: "アーメン。箴言十六章三節。あなたのわざを主にゆだねよ、そうすればあなたの計画は成る。",
+    amenTitle: "アーメン。",
+    amenBody: "あなたのわざを主にゆだねよ、そうすればあなたの計画は成る。"
+  }
+};
+
+let lang = "pt";
+let voices = [];
+let selectedVoice = null;
+let rate = 0.85;
+let state = "idle"; // idle | speak | silence | bible | free | done
+let paused = false;
+let timerInterval = null;
+let timerRemaining = 60;
+
+const el = {
+  verseTop: document.getElementById('verseTop'),
+  segLabel: document.getElementById('segLabel'),
+  segSub: document.getElementById('segSub'),
+  timerDisplay: document.getElementById('timerDisplay'),
+  dots: document.querySelectorAll('.dot'),
+  flameWrap: document.getElementById('flameWrap'),
+  playBtn: document.getElementById('playBtn'),
+  skipBtn: document.getElementById('skipBtn'),
+  restartBtn: document.getElementById('restartBtn'),
+  amenScreen: document.getElementById('amenScreen'),
+  amenTitle: document.getElementById('amenTitle'),
+  amenBody: document.getElementById('amenBody'),
+  voiceSelect: document.getElementById('voiceSelect'),
+  rateRange: document.getElementById('rateRange'),
+  langs: document.getElementById('langs')
+};
+
+function populateVoices(){
+  voices = window.speechSynthesis.getVoices();
+  const langPrefix = { pt:'pt', en:'en', ja:'ja' }[lang];
+  const filtered = voices.filter(v => v.lang.toLowerCase().startsWith(langPrefix));
+  const list = filtered.length ? filtered : voices;
+  el.voiceSelect.innerHTML = '';
+  list.forEach((v,i) => {
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    opt.textContent = v.name + ' (' + v.lang + ')';
+    el.voiceSelect.appendChild(opt);
+  });
+  selectedVoice = list[0] || null;
+}
+window.speechSynthesis.onvoiceschanged = populateVoices;
+populateVoices();
+
+el.voiceSelect.addEventListener('change', () => {
+  selectedVoice = voices.find(v => v.name === el.voiceSelect.value) || selectedVoice;
+});
+el.rateRange.addEventListener('input', () => { rate = parseFloat(el.rateRange.value); });
+
+el.langs.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-lang]');
+  if(!btn) return;
+  lang = btn.dataset.lang;
+  [...el.langs.children].forEach(b => b.classList.toggle('active', b === btn));
+  el.verseTop.textContent = CONTENT[lang].verse;
+  populateVoices();
+  resetToIdle();
+});
+
+function setDots(activeId, doneIds){
+  el.dots.forEach(d => {
+    d.classList.toggle('active', d.dataset.seg === activeId);
+    d.classList.toggle('done', doneIds.includes(d.dataset.seg));
+  });
+}
+
+function speak(text, onEnd){
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if(selectedVoice) u.voice = selectedVoice;
+  u.lang = selectedVoice ? selectedVoice.lang : (lang === 'pt' ? 'pt-BR' : lang === 'ja' ? 'ja-JP' : 'en-US');
+  u.rate = rate;
+  u.onend = () => { if(!paused) onEnd && onEnd(); };
+  window.speechSynthesis.speak(u);
+}
+
+function startTimer(seconds, onDone){
+  timerRemaining = seconds;
+  el.timerDisplay.classList.add('show');
+  updateTimerDisplay();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if(paused) return;
+    timerRemaining--;
+    updateTimerDisplay();
+    if(timerRemaining <= 0){
+      clearInterval(timerInterval);
+      chime();
+      onDone();
+    }
+  }, 1000);
+}
+function updateTimerDisplay(){
+  const m = Math.floor(timerRemaining/60);
+  const s = timerRemaining%60;
+  el.timerDisplay.textContent = m + ':' + String(s).padStart(2,'0');
+}
+
+function chime(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    [523.25, 659.25].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + i*0.18);
+      g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i*0.18 + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i*0.18 + 0.9);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + i*0.18);
+      o.stop(ctx.currentTime + i*0.18 + 0.95);
+    });
+  }catch(e){}
+}
+
+function goSpeak(){
+  state = 'speak';
+  el.timerDisplay.classList.remove('show');
+  el.flameWrap.classList.add('speaking');
+  el.flameWrap.classList.remove('paused');
+  el.segLabel.textContent = CONTENT[lang].labels.speak;
+  el.segSub.textContent = '';
+  setDots('speak', []);
+  speak(CONTENT[lang].speakText, goSilence);
+}
+function goSilence(){
+  state = 'silence';
+  el.flameWrap.classList.remove('speaking');
+  el.segLabel.textContent = CONTENT[lang].labels.silence;
+  el.segSub.textContent = CONTENT[lang].subs.silence;
+  setDots('silence', ['speak']);
+  speak(CONTENT[lang].silenceInstr, () => {
+    startTimer(60, goBible);
+  });
+}
+function goBible(){
+  state = 'bible';
+  el.flameWrap.classList.remove('speaking');
+  el.segLabel.textContent = CONTENT[lang].labels.bible;
+  el.segSub.textContent = CONTENT[lang].subs.bible;
+  setDots('bible', ['speak','silence']);
+  speak(CONTENT[lang].bibleInstr, () => {
+    startTimer(60, goFree);
+  });
+}
+function goFree(){
+  state = 'free';
+  el.flameWrap.classList.remove('speaking');
+  el.segLabel.textContent = CONTENT[lang].labels.free;
+  el.segSub.textContent = CONTENT[lang].subs.free;
+  setDots('free', ['speak','silence','bible']);
+  speak(CONTENT[lang].freeInstr, () => {
+    startTimer(60, goAmen);
+  });
+}
+function goAmen(){
+  state = 'done';
+  el.flameWrap.classList.remove('speaking');
+  el.timerDisplay.classList.remove('show');
+  setDots(null, ['speak','silence','bible','free']);
+  el.segLabel.textContent = '';
+  el.segSub.textContent = '';
+  el.amenTitle.textContent = CONTENT[lang].amenTitle;
+  el.amenBody.textContent = CONTENT[lang].amenBody;
+  el.amenScreen.classList.add('show');
+  el.playBtn.textContent = '▶';
+  speak(CONTENT[lang].closing, null);
+}
+
+function resetToIdle(){
+  window.speechSynthesis.cancel();
+  clearInterval(timerInterval);
+  state = 'idle'; paused = false;
+  el.flameWrap.classList.remove('speaking','paused');
+  el.timerDisplay.classList.remove('show');
+  el.amenScreen.classList.remove('show');
+  el.segLabel.textContent = CONTENT[lang].ready_label;
+  el.segSub.textContent = CONTENT[lang].ready_sub;
+  setDots(null, []);
+  el.playBtn.textContent = '▶';
+}
+resetToIdle();
+
+el.playBtn.addEventListener('click', () => {
+  if(state === 'idle' || state === 'done'){
+    resetToIdle();
+    el.playBtn.textContent = '❚❚';
+    goSpeak();
+    return;
+  }
+  // pause / resume
+  paused = !paused;
+  if(paused){
+    window.speechSynthesis.pause();
+    el.flameWrap.classList.add('paused');
+    el.playBtn.textContent = '▶';
+  } else {
+    window.speechSynthesis.resume();
+    el.flameWrap.classList.remove('paused');
+    el.playBtn.textContent = '❚❚';
+  }
+});
+
+el.skipBtn.addEventListener('click', () => {
+  if(state === 'idle' || state === 'done') return;
+  clearInterval(timerInterval);
+  window.speechSynthesis.cancel();
+  paused = false;
+  if(state === 'speak') goSilence();
+  else if(state === 'silence') goBible();
+  else if(state === 'bible') goFree();
+  else if(state === 'free') goAmen();
+});
+
+el.restartBtn.addEventListener('click', () => {
+  resetToIdle();
+});
+</script>
+</body>
+</html>
