@@ -1174,7 +1174,7 @@ function dayOfYear(d){
 function buildExList(letra, lang){
   const t = T[lang];
   return WORKOUTS[letra].map(ex => ({
-    id: `tr_${ex.id}`,
+    id: `tr_${letra}_${ex.id}`,
     label: exLabel(ex, lang) + (exGroup(ex, lang) ? ` [${exGroup(ex, lang)}]` : ''),
     note: exNote(ex, lang),
     video: ex.video || null,
@@ -1224,14 +1224,12 @@ function buildSections(date, lang, extra){
     ]});
   }
 
-  if(type !== 'treino'){
-    if(extra && extra.letra){
-      const exList = buildExList(extra.letra, lang);
-      sections.push({ id:'treino', time:'', title:`${t.sec.treinoExtra} ${extra.letra} (${TREINO_GROUP[extra.letra][lang]})`, tasks: exList,
-        groupIds: exList.map(e => e.id), isExtraTreino:true, extraInfo: extra });
-    } else {
-      sections.push({ id:'extra-treino-picker', time:'', title:t.sec.treinoExtra, tasks:[], isExtraPicker:true });
-    }
+  if(extra && extra.letra){
+    const exList = buildExList(extra.letra, lang);
+    sections.push({ id:'treino-extra', time:'', title:`${t.sec.treinoExtra} ${extra.letra} (${TREINO_GROUP[extra.letra][lang]})`, tasks: exList,
+      groupIds: exList.map(e => e.id), isExtraTreino:true, extraInfo: extra });
+  } else {
+    sections.push({ id:'extra-treino-picker', time:'', title:t.sec.treinoExtra, tasks:[], isExtraPicker:true });
   }
 
   if(wd === 4 || wd === 5){
@@ -1647,6 +1645,45 @@ async function syncFromCloud(){
   }
 }
 
+function parseKeyToDate(key){
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+const OLD_EX_BASE_IDS = ['warmup','ex1','ex2','ex3','ex4','ex5','ex6','ex7','cooldown'];
+function migrateExerciseIds(data, key){
+  let changed = false;
+  let dateObj;
+  try{ dateObj = parseKeyToDate(key); }catch(e){ return false; }
+  const type = getDayType(dateObj);
+  const fixedLetra = type === 'treino' ? TREINO_LETRA[dateObj.getDay()] : null;
+  const extraLetra = data.extraTreino && data.extraTreino.letra ? data.extraTreino.letra : null;
+  const letrasToTry = [fixedLetra, extraLetra].filter(Boolean);
+  if(!letrasToTry.length) return false;
+  OLD_EX_BASE_IDS.forEach(base => {
+    const oldId = `tr_${base}`;
+    letrasToTry.forEach(letra => {
+      const newId = `tr_${letra}_${base}`;
+      ['', 'sets_', 'c_', 'p_'].forEach(prefix => {
+        const oKey = prefix ? `${prefix}${oldId}` : oldId;
+        const nKey = prefix ? `${prefix}${newId}` : newId;
+        if(data[oKey] !== undefined && data[nKey] === undefined){
+          data[nKey] = data[oKey];
+          changed = true;
+        }
+      });
+    });
+  });
+  if(changed){
+    OLD_EX_BASE_IDS.forEach(base => {
+      const oldId = `tr_${base}`;
+      ['', 'sets_', 'c_', 'p_'].forEach(prefix => {
+        const oKey = prefix ? `${prefix}${oldId}` : oldId;
+        delete data[oKey];
+      });
+    });
+  }
+  return changed;
+}
 async function getDayLocal(key){
   try{
     const v = localStorage.getItem(`gandini-day:${key}`);
@@ -1654,7 +1691,11 @@ async function getDayLocal(key){
   }catch(e){ return {}; }
 }
 async function getDay(key){
-  return getDayLocal(key);
+  const data = await getDayLocal(key);
+  if(migrateExerciseIds(data, key)){
+    await setDay(key, data);
+  }
+  return data;
 }
 async function setDay(key, data){
   data._updatedAt = Date.now();
@@ -1856,9 +1897,9 @@ async function renderHoje(){
 
     if(sec.id === 'treino'){
       body.appendChild(renderReposicaoControl(dayData, todayKey, renderHoje));
-      if(sec.isExtraTreino){
-        body.appendChild(renderExtraTreinoInfo(sec.extraInfo, todayKey, dayData, renderHoje));
-      }
+    }
+    if(sec.isExtraTreino){
+      body.appendChild(renderExtraTreinoInfo(sec.extraInfo, todayKey, dayData, renderHoje));
     }
 
     if(sec.id === 'medicamentos' && medUnlocked){
@@ -2407,6 +2448,19 @@ function removeExSet(taskId, dataObj, dateKey, idx){
   sets.splice(idx, 1);
   saveExSets(taskId, sets, dataObj, dateKey);
 }
+function groupSets(sets){
+  const groups = [];
+  sets.forEach((s, idx) => {
+    const last = groups[groups.length - 1];
+    if(last && last.peso === s.peso && last.reps === s.reps && last.style === s.style){
+      last.count++;
+      last.endIdx = idx;
+    } else {
+      groups.push({ peso: s.peso, reps: s.reps, style: s.style, count: 1, startIdx: idx, endIdx: idx });
+    }
+  });
+  return groups;
+}
 
 /* Wheel picker: vertical scroll-snap list. Returns { el, getValue } */
 function buildWheelPicker(values, initialValue, labelSuffix){
@@ -2489,12 +2543,19 @@ function openExerciseModal(task, dataObj, dateKey, rerenderFn){
   box.appendChild(summaryWrap);
   function renderSummary(){
     summaryWrap.innerHTML = '';
-    sets.forEach((s, idx) => {
+    const groups = groupSets(sets);
+    groups.forEach((g, gi) => {
       const row = document.createElement('div');
       row.className = 'set-summary-row';
-      const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
-      row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span><button type="button" class="ssdel">🗑</button>`;
-      row.querySelector('.ssdel').addEventListener('click', (e) => { e.stopPropagation(); removeExSet(taskId, dataObj, dateKey, idx); sets.splice(idx,1); renderSummary(); });
+      const styleTag = g.style === 'pulley' ? 'Pulley' : g.style === 'other' ? '' : 'Dumbbell';
+      const countSuffix = g.count > 1 ? ` ×${g.count}` : '';
+      row.innerHTML = `<span class="ssi">${gi+1}.</span><span class="ssv">${g.peso ? g.peso + ' lbs × ' : ''}${g.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}${countSuffix}</span><button type="button" class="ssdel">🗑</button>`;
+      row.querySelector('.ssdel').addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeExSet(taskId, dataObj, dateKey, g.endIdx);
+        sets.splice(g.endIdx, 1);
+        renderSummary();
+      });
       summaryWrap.appendChild(row);
     });
   }
@@ -2599,11 +2660,13 @@ function buildSetsEditor(task, dataObj, dateKey, rerenderFn){
   const box = document.createElement('div');
   box.className = 'sets-editor';
   const sets = getExSets(task.id, dataObj);
-  sets.forEach((s, idx) => {
+  const groups = groupSets(sets);
+  groups.forEach((g, gi) => {
     const row = document.createElement('div');
     row.className = 'set-summary-row';
-    const styleTag = s.style === 'pulley' ? 'Pulley' : s.style === 'other' ? '' : 'Dumbbell';
-    row.innerHTML = `<span class="ssi">${idx+1}.</span><span class="ssv">${s.peso ? s.peso + ' lbs × ' : ''}${s.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}</span>`;
+    const styleTag = g.style === 'pulley' ? 'Pulley' : g.style === 'other' ? '' : 'Dumbbell';
+    const countSuffix = g.count > 1 ? ` ×${g.count}` : '';
+    row.innerHTML = `<span class="ssi">${gi+1}.</span><span class="ssv">${g.peso ? g.peso + ' lbs × ' : ''}${g.reps} ${t.setReps}${styleTag ? ' · ' + styleTag : ''}${countSuffix}</span>`;
     row.addEventListener('click', () => openExerciseModal(task, dataObj, dateKey, rerenderFn));
     box.appendChild(row);
   });
@@ -2965,9 +3028,9 @@ async function renderDayDetail(dateObj){
       }
       if(sec.id === 'treino'){
         body.appendChild(renderReposicaoControl(data, key, () => renderDayDetail(dateObj)));
-        if(sec.isExtraTreino){
-          body.appendChild(renderExtraTreinoInfo(sec.extraInfo, key, data, () => renderDayDetail(dateObj)));
-        }
+      }
+      if(sec.isExtraTreino){
+        body.appendChild(renderExtraTreinoInfo(sec.extraInfo, key, data, () => renderDayDetail(dateObj)));
       }
     }
     if(sec.note){
@@ -3045,7 +3108,7 @@ async function renderSemana(){
     const letra = TREINO_LETRA[d.getDay()];
     const exs = WORKOUTS[letra] || [];
     if(exs.length === 0) return 0;
-    const done = exs.filter(ex => !!dt[`tr_${ex.id}`]).length;
+    const done = exs.filter(ex => !!dt[`tr_${letra}_${ex.id}`]).length;
     return done / exs.length;
   }
   function ringColor(pct){
@@ -3370,7 +3433,7 @@ async function gerarRelatorioHTML(log){
         }
         dayHtml += `<div class="subhead">${rl.treino} ${letraDia} (${TREINO_GROUP[letraDia].ja})</div><ul class="exlist">`;
         exs.forEach(ex => {
-          const exId = `tr_${ex.id}`;
+          const exId = `tr_${letraDia}_${ex.id}`;
           const exDone = rec[exId];
           const exComment = rec[`c_${exId}`];
           const grp = exGroup(ex, 'ja');
@@ -3658,7 +3721,7 @@ async function gerarRelatorio(){
 
         setF('bold'); doc.text(`${rl.treino} ${letraDia} (${TREINO_GROUP[letraDia][reportLang]}):`, 24, y); y += 5.5; setF('normal');
         exs.forEach(ex => {
-          const exId = `tr_${ex.id}`;
+          const exId = `tr_${letraDia}_${ex.id}`;
           const exDone = rec[exId];
           const exComment = rec[`c_${exId}`];
           const grp = exGroup(ex, reportLang);
